@@ -320,7 +320,7 @@ export const zh_CN: Translation = {
 	[Key.wavesAnimation]: "水波纹动画",
 	[Key.bannerTitle]: "横幅标题",
 	[Key.bannerCarousel]: "横幅轮播",
-	[Key.sakuraEffect]: "樱花特效",
+	[Key.sakuraEffect]: "枫叶特效",
 	[Key.effectsSettings]: "特效",
 	[Key.postListLayout]: "文章布局",
 	[Key.postListLayoutList]: "列表",
