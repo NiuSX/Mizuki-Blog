@@ -23,15 +23,15 @@ export interface MarkdownEnhancementConfig {
  */
 export const markdownConfig: MarkdownEnhancementConfig = {
 	autoImageGrid: {
-		enable: true,
+		enable: false,
 		minImages: 2,
 		maxColumns: 4,
 	},
 	wikiLink: {
-		enable: true,
+		enable: false,
 	},
 	plantuml: {
-		enable: true,
+		enable: false,
 		server: "https://www.plantuml.com/plantuml",
 		lightTheme: "",
 		darkTheme: "cyborg",

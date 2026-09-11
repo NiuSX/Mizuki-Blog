@@ -1,7 +1,8 @@
 // 设备页面处理脚本
-// 此脚本作为全局脚本加载，不受 Swup 页面切换影响
+// 作为全局脚本加载，不受 Swup 页面切换影响
 
 (() => {
+	// 初始化全局状态，避免重复定义
 	if (typeof window.devicesPageState === "undefined") {
 		window.devicesPageState = {
 			eventListeners: [],
@@ -9,6 +10,7 @@
 		};
 	}
 
+	// HTML 转义，防止 XSS
 	function escapeHtml(value) {
 		return String(value ?? "")
 			.replace(/&/g, "&amp;")
@@ -18,6 +20,7 @@
 			.replace(/'/g, "&#39;");
 	}
 
+	// 清理已注册的事件监听器
 	function cleanupListeners() {
 		const state = window.devicesPageState;
 		for (let i = 0; i < state.eventListeners.length; i++) {
@@ -29,7 +32,9 @@
 		state.eventListeners = [];
 	}
 
+	// 生成单个设备卡片的 HTML
 	function createDeviceCardHTML(device, index, viewDetailsText) {
+		// 图片区域
 		const imgSection =
 			'<div class="relative p-6 pb-0"><div class="flex justify-center items-center h-48 bg-linear-to-br from-(--card-bg) to-(--btn-regular-bg) rounded-lg overflow-hidden relative"><div class="absolute inset-0 bg-(--primary)/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div><img src="' +
 			escapeHtml(device.image) +
@@ -37,6 +42,7 @@
 			escapeHtml(device.name) +
 			'" class="w-auto h-full max-h-full object-contain group-hover:scale-110 transition-all duration-500 drop-shadow-md relative z-10" loading="lazy"></div></div>';
 
+		// 信息区域
 		const infoSection =
 			'<div class="p-6 pt-4 relative z-10"><div class="flex items-start justify-between mb-3"><h3 class="text-lg font-bold text-black/90 dark:text-white/90 group-hover:text-(--primary) transition-colors duration-300">' +
 			escapeHtml(device.name) +
@@ -48,6 +54,7 @@
 			escapeHtml(viewDetailsText) +
 			'</span><svg class="w-5 h-5 text-(--primary)" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg></div></div>';
 
+		// 外层链接 + 入场动画
 		return (
 			'<a href="' +
 			escapeHtml(device.link) +
@@ -60,12 +67,14 @@
 		);
 	}
 
+	// 初始化设备页面
 	function initDevicesPage() {
 		const brandTabs = document.querySelectorAll(".filter-tag[data-brand]");
 		const devicesContainer = document.getElementById("devices-container");
 		const devicesDataElement = document.getElementById("devices-data");
 		const i18nDataElement = document.getElementById("i18n-data");
 
+		// 元素不全则退出
 		if (
 			!brandTabs.length ||
 			!devicesContainer ||
@@ -80,6 +89,7 @@
 
 		cleanupListeners();
 
+		// 绑定品牌标签点击事件
 		brandTabs.forEach((tab) => {
 			const clickHandler = () => {
 				const brand = tab.dataset.brand;
@@ -87,9 +97,11 @@
 					return;
 				}
 
+				// 切换激活状态
 				brandTabs.forEach((item) => item.classList.remove("active"));
 				tab.classList.add("active");
 
+				// 渲染对应品牌的设备
 				const brandDevices = devicesData[brand] || [];
 				devicesContainer.innerHTML = brandDevices
 					.map((device, index) =>
@@ -113,6 +125,7 @@
 		return true;
 	}
 
+	// 带重试的初始化（应对 DOM 延迟加载）
 	function tryInit(retries) {
 		retries = retries || 0;
 		if (initDevicesPage()) {
@@ -125,6 +138,7 @@
 		}
 	}
 
+	// 监听 DOM 变化，页面切换后自动重新初始化
 	function setupMutationObserver() {
 		if (window.devicesPageState.mutationObserver) {
 			window.devicesPageState.mutationObserver.disconnect();
@@ -149,6 +163,7 @@
 							continue;
 						}
 
+						// 检测设备页面关键元素是否被添加
 						if (
 							node.id === "devices-container" ||
 							node.id === "devices-data" ||
@@ -180,6 +195,7 @@
 		});
 	}
 
+	// 首次加载初始化
 	if (document.readyState === "loading") {
 		document.addEventListener("DOMContentLoaded", () => {
 			tryInit();
@@ -190,6 +206,7 @@
 
 	setupMutationObserver();
 
+	// 页面切换事件，重新初始化
 	const events = [
 		"swup:contentReplaced",
 		"swup:pageView",

@@ -1,49 +1,11 @@
+🌱 关于我：一名一直在路上的学徒
 
-This website is built with the **Astro** framework using the [Mizuki](https://github.com/LyraVoid/Mizuki) theme.
+你好呀！很高兴能在这里与你相遇。
 
-::github{repo="LyraVoid/Mizuki"}
+坦白说，站在技术的浩瀚海洋前，我更像一个刚刚拾起贝壳的孩子，既充满好奇，也偶尔会为浪潮的复杂而驻足。 我并不是那种能闭着眼睛写出完美代码、或者对底层原理如数家珍的技术大牛——至少现在还不是（笑）。我的技能 树可能才刚刚发芽，但我深信，每一个庞大的系统、每一个优雅的算法，都始于一个勇敢的“Hello, World”。
 
-## 🌟 Theme Features
+我创建这个博客，不是为了展示我有多么精通，恰恰相反，是为了记录下作为一名技术小白的探索足迹。我会在这里 分享我学习中的顿悟时刻，也会诚实地写下遇到的坑与困惑。如果你在我的文章里发现不准确的地方，或是有更好的 思路，请一定告诉我！我渴望听到你的声音，因为我相信：技术之路，从来不是独行。
 
-### 🎨 Design & User Experience
-- **Modern & Elegant Design** - Clean, minimalist interface with beautiful typography
-- **Fully Responsive** - Optimized for all devices from mobile to desktop
-- **Dark/Light Mode** - Automatic theme switching with smooth transitions
-- **Beautiful Typography** - Enhanced readability with JetBrains Mono font
-- **Smooth Animations** - Fluid page transitions and interactive elements
+所以，无论你是与我一样的初学者，还是已经行走多年的技术达人，我都衷心希望我们能在这里交流、碰撞、互相鼓 励。也许我成长得慢一些，但每一步都踏实而认真。
 
-### 🔍 Content & Search
-- **Advanced Search** - Powered by [Pagefind](https://pagefind.app/) for fast, accurate results
-- **Enhanced Markdown** - Extended syntax with code highlighting and math support
-- **Interactive Table of Contents** - Auto-scroll navigation for long articles
-- **RSS Feed Generation** - Stay updated with automatic feed generation
-- **Reading Time Estimation** - Know how long articles take to read
-- **Post Categorization** - Organize content with tags and categories
-
-
-
-### 📱 Special Pages
-- **Anime Tracking Page** - Track your anime watching progress with ratings
-- **Friends Links Page** - Showcase friend websites with beautiful cards
-- **Diary/Moments Page** - Share life moments like social media posts
-- **Archive Page** - Organized timeline view of all posts
-- **About Page** - Customizable personal introduction (this page!)
-
-### 🛠 Technical Features
-- **Enhanced Code Blocks** - Powered by [Expressive Code](https://expressive-code.com/)
-- **Math Support** - LaTeX rendering with KaTeX for mathematical expressions
-- **Image Optimization** - PhotoSwipe gallery with lazy loading
-- **SEO Optimized** - Built-in sitemap and meta tags for better search visibility
-- **Performance Optimized** - Fast loading with caching and optimization
-- **Comment System Ready** - Integration support for Twikoo comments
-
-### 🎯 Advanced Markdown Features
-- **Callouts & Admonitions** - Beautiful info boxes with `> [!NOTE]`, `> [!TIP]`, `> [!WARNING]`
-- **Mathematical Equations** - Write LaTeX math with `$inline$` and `$$block$$` syntax
-- **GitHub Cards** - Embed repository cards with `::github{repo="user/repo"}`
-- **Syntax Highlighting** - Advanced code highlighting with line numbers
-- **Copy Code Buttons** - Easy code copying functionality
-
----
-
-*Built with ❤️ using Astro and inspired by modern web design principles.*
+未来的日子，还请多多指教。我们一起学习，不断努力，成为更好的自己吧！

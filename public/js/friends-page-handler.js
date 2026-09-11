@@ -1,10 +1,10 @@
 // 友情链接页面处理脚本
-// 此脚本作为全局脚本加载，不受 Swup 页面切换影响
+// 作为全局脚本加载，不受 Swup 页面切换影响
 
 (() => {
 	console.log("[Friends Global] Script loaded");
 
-	// 使用全局变量存储状态
+	// 全局状态存储
 	if (typeof window.friendsPageState === "undefined") {
 		window.friendsPageState = {
 			initialized: false,
@@ -14,7 +14,7 @@
 		};
 	}
 
-	// 初始化函数
+	// 初始化友情链接页面
 	function initFriendsPage() {
 		console.log("[Friends Global] initFriendsPage called");
 
@@ -22,7 +22,7 @@
 		var friendsGrid = document.getElementById("friends-grid");
 		var noResults = document.getElementById("no-results");
 
-		// 如果关键元素不存在，直接返回
+		// 关键元素不存在则退出
 		if (!searchInput || !friendsGrid || !noResults) {
 			return false;
 		}
@@ -37,7 +37,7 @@
 			copyButtons: copyButtons.length,
 		});
 
-		// 从页面获取复制成功文本
+		// 读取页面提供的复制成功提示文本
 		var copySuccessTextElement = document.getElementById(
 			"friends-copy-success-text",
 		);
@@ -46,7 +46,7 @@
 				copySuccessTextElement.textContent;
 		}
 
-		// 清理旧的事件监听器
+		// 清理旧的监听器，避免重复绑定
 		if (window.friendsPageState.eventListeners.length > 0) {
 			console.log(
 				"[Friends Global] Cleaning",
@@ -68,7 +68,7 @@
 		var currentTag = "all";
 		var searchTerm = "";
 
-		// 过滤函数
+		// 根据搜索词与标签过滤卡片
 		function filterFriends() {
 			var visibleCount = 0;
 			for (var i = 0; i < friendCards.length; i++) {
@@ -92,6 +92,7 @@
 				}
 			}
 
+			// 无结果时显示提示，隐藏网格
 			if (visibleCount === 0) {
 				noResults.classList.remove("hidden");
 				friendsGrid.classList.add("hidden");
@@ -101,7 +102,7 @@
 			}
 		}
 
-		// 搜索功能
+		// 搜索输入
 		var searchHandler = (e) => {
 			searchTerm = e.target.value.toLowerCase();
 			filterFriends();
@@ -113,11 +114,11 @@
 			searchHandler,
 		]);
 
-		// 标签筛选
+		// 标签筛选按钮
 		for (var i = 0; i < tagFilters.length; i++) {
 			((button) => {
 				var clickHandler = () => {
-					// 更新选中状态
+					// 更新激活状态
 					for (var j = 0; j < tagFilters.length; j++) {
 						var btn = tagFilters[j];
 						btn.classList.remove("active");
@@ -136,7 +137,7 @@
 			})(tagFilters[i]);
 		}
 
-		// 复制链接功能
+		// 复制链接按钮
 		for (var i = 0; i < copyButtons.length; i++) {
 			((button) => {
 				var clickHandler = () => {
@@ -147,6 +148,7 @@
 						navigator.clipboard
 							.writeText(url)
 							.then(() => {
+								// 临时切换为成功提示
 								var originalHTML = button.innerHTML;
 								button.innerHTML =
 									'<div class="flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span class="text-xs">' +
@@ -195,7 +197,7 @@
 		}
 	}
 
-	// MutationObserver 监听 DOM 变化
+	// 监听 DOM 变化，页面切换后重新初始化
 	function setupMutationObserver() {
 		if (window.friendsPageState.mutationObserver) {
 			window.friendsPageState.mutationObserver.disconnect();
@@ -210,6 +212,7 @@
 						for (var j = 0; j < mutation.addedNodes.length; j++) {
 							var node = mutation.addedNodes[j];
 							if (node.nodeType === 1) {
+								// 检测友情链接页面关键元素
 								if (
 									node.id === "friends-grid" ||
 									node.id === "friend-search" ||
@@ -240,7 +243,7 @@
 		});
 	}
 
-	// 页面加载时初始化
+	// 首次加载初始化
 	if (document.readyState === "loading") {
 		document.addEventListener("DOMContentLoaded", () => {
 			console.log("[Friends Global] DOMContentLoaded");
@@ -250,7 +253,7 @@
 		tryInit();
 	}
 
-	// 启动 MutationObserver
+	// 启动 DOM 监听
 	setupMutationObserver();
 
 	// 监听所有可能的页面切换事件
