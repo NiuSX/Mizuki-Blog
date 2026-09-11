@@ -3,7 +3,7 @@ import type { PioConfig } from "../types/config";
 // Pio 看板娘配置
 export const pioConfig: PioConfig = {
 	enable: true, // 启用看板娘
-	models: ["/pio/models/NOIR/noir.model3.json"], // 默认模型路径
+	models: ["/pio/models/standard/cat.model3.json"], // 默认模型路径
 	position: "left", // 模型位置
 	width: 280, // 默认宽度
 	height: 250, // 默认高度
@@ -13,7 +13,7 @@ export const pioConfig: PioConfig = {
 	dialog: {
 		welcome: "欢迎来到一只捡星星的熊的个人博客", // 欢迎词
 		touch: [
-			"你有什么想要和我讲的吗？",
+			"喵呜！！！",
 		], // 触摸提示
 		home: "点击这儿返回首页", // 首页提示
 		skin: ["你想要看看我的新服装吗？", "这身衣服漂亮吧！"], // 换装提示
