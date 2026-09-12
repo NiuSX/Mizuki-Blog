@@ -205,7 +205,7 @@ export const siteConfig: SiteConfig = {
 	showCoverInContent: true, // 在文章内容页显示文章封面
 	generateOgImages: false, // 启用生成OpenGraph图片功能,注意开启后要渲染很长时间，不建议本地调试的时候开启
 	favicon: [
-		留空以使用默认 favicon
+		//留空以使用默认 favicon
 		{
 		  src: '/favicon/facio.png',    // 图标文件路径
 		  theme: 'light',              // 可选，指定主题 'light' | 'dark'
