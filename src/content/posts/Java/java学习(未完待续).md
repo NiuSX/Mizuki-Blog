@@ -1,6 +1,6 @@
 ---
 title: "java学习(未完待续)"
-published: 2026-1-29
+published: 2026-01-29
 description: "Java 学习笔记，整理语言基础、面向对象、常用语法、运行机制和开发入门内容。"
 category: 编程语言
 tags: [java]
