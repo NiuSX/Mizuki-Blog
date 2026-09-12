@@ -1,0 +1,10 @@
+{
+	"mode": "external",
+	"title": "加密相册示例",
+	"description": "这是一个加密相册示例，需要密码才能查看照片",
+	"date": "2025-05-22",
+	"location": "秘密花园",
+	"tags": ["加密", "示例", "私密"],
+	"password": "123456",
+	"passwordHint": "六位数字"
+}
