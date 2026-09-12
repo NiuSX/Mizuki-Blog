@@ -158,7 +158,7 @@ SSE 虽然在早期实现服务端推送场景中提供了一种简洁方式，�
 
 ## 工作流程
 
-![](../imgs/MCP_work_progress.jpg)
+![](./imgs/MCP_work_progress.jpg)
 
 **连接：建立通信通道**
 
