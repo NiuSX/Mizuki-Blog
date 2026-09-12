@@ -1,7 +1,7 @@
-import clCover from "../../../assets/music/cover/cl.webp?url";
-import dazbeeCover from "../../../assets/music/cover/dazbee.webp?url";
-import hitoriCover from "../../../assets/music/cover/hitori.webp?url";
-import xryxCover from "../../../assets/music/cover/xryx.webp?url";
+import ycslCover from "../../../assets/music/cover/一程山路.webp?url";
+import hwysyCover from "../../../assets/music/cover/海娃与三丫.webp?url";
+import yfCover from "../../../assets/music/cover/远方.webp?url";
+
 import type { Song } from "./types";
 
 export const STORAGE_KEY_VOLUME = "music-player-volume";
@@ -13,36 +13,29 @@ export const DEFAULT_COVER_URL = "/favicon/favicon.ico";
 export const LOCAL_PLAYLIST: Song[] = [
 	{
 		id: 1,
-		title: "口笛で愛は歌えない",
-		artist: "Dazbee",
-		cover: dazbeeCover,
-		url: "assets/music/url/dazbee.mp3",
-		duration: 241,
+		title: "海娃与三丫",
+		artist: "我有一个朋友",
+		cover: hwysyCover,
+		url: "assets/music/url/海娃与三丫.mp3",
+		duration: 359,
 	},
 	{
 		id: 2,
-		title: "ひとり上手",
-		artist: "Kaya",
-		cover: hitoriCover,
-		url: "assets/music/url/hitori.mp3",
-		duration: 253,
+		title: "远方",
+		artist: "一起同过窗",
+		cover: yfCover,
+		url: "assets/music/url/远方.mp3",
+		duration: 208,
 	},
 	{
 		id: 3,
-		title: "眩耀夜行",
-		artist: "ス리즈ブーケ",
-		cover: xryxCover,
-		url: "assets/music/url/xryx.mp3",
-		duration: 245,
+		title: "一程山路",
+		artist: "毛不易",
+		cover: ycslCover,
+		url: "assets/music/url/一程山路.mp3",
+		duration: 215,
 	},
-	{
-		id: 4,
-		title: "春雷の頃",
-		artist: "22/7",
-		cover: clCover,
-		url: "assets/music/url/cl.mp3",
-		duration: 242,
-	},
+
 ];
 
 export const DEFAULT_SONG: Song = {
@@ -56,7 +49,7 @@ export const DEFAULT_SONG: Song = {
 
 export const DEFAULT_METING_API =
 	"https://www.bilibili.uno/api?server=:server&type=:type&id=:id&auth=:auth&r=:r";
-export const DEFAULT_METING_ID = "14164869977";
+export const DEFAULT_METING_ID = "14164";
 export const DEFAULT_METING_SERVER = "netease";
 export const DEFAULT_METING_TYPE = "playlist";
 
