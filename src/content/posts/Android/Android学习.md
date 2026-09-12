@@ -1,6 +1,6 @@
 ---
 title: "Android 学习"
-published: 2026-3-15
+published: 2026-03-15
 description: "Android 学习笔记，整理系统概念、项目结构、组件、开发工具和移动应用开发基础。"
 category: Android
 tags: []
