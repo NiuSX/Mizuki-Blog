@@ -8,8 +8,8 @@ export const pioConfig: PioConfig = {
 	width: 280, // 默认宽度
 	height: 250, // 默认高度
 	mode: "draggable", // 默认为可拖拽模式
-	hiddenOnMobile: false, // 默认在移动设备上隐藏
-	hideAboutMenu: false, // 隐藏内置 About 菜单按钮
+	hiddenOnMobile: true, // 默认在移动设备上隐藏
+	hideAboutMenu: true, // 隐藏内置 About 菜单按钮
 	dialog: {
 		welcome: "欢迎来到一只捡星星的熊的个人博客", // 欢迎词
 		touch: [
