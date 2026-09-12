@@ -12,7 +12,7 @@ Android是一个开源的，基于Linux的移动设备操作系统，主要使�
 
 ## 架构
 
-![](../imgs/android_architecture.jpg)
+![](./imgs/android_architecture.jpg)
 
 Android 操作系统是一个软件组件的栈，在架构图中它大致可以分为五个部分和四个主要层。
 分别为应用层、应用框架层、系统运行层（原生库和 Android 运行时）、Linux内核层
@@ -91,7 +91,7 @@ Android 操作系统是一个软件组件的栈，在架构图中它大致可以
 
 ## UI界面
 
-![](../imgs/Android_UI.png)
+![](./imgs/Android_UI.png)
 
 Android界面上有状态栏(status bar)、标题栏(action bar, toolbar)、导航栏 
 (navigation bar) 等
@@ -135,7 +135,7 @@ APP实现沉浸式有三种需求：沉浸式状态栏，隐藏导航栏，APP�
 
 活动代表了一个具有用户界面的单一屏幕。
 Android活动的声明周期如下图所示：
-![](../imgs/activity_lifecycle.jpg)
+![](./imgs/activity_lifecycle.jpg)
 
 Activity类定义的回调如下：
 
@@ -158,7 +158,7 @@ Activity类定义的回调如下：
 - Bound：当Android的应用程序组件通过bindService()绑定了服务，则服务是Bound状态。Bound状态的服务提供了一个客户服务器接口来允许组件与服务进行交互，如发送请求，获取结果，甚至通过IPC来进行跨进程通信。
 
 服务拥有生命周期方法，可以实现监控服务状态的变化，可以在合适的阶段执行工作。下面的左图展示了当服务通过startService()被创建时的生命周期，右图则显示了当服务通过bindService()被创建时的生命周期：
-![](../imgs/services_lifecycle.jpg)
+![](./imgs/services_lifecycle.jpg)
 
 提供的回调有些：
 
@@ -201,7 +201,7 @@ Activity类定义的回调如下：
 # Content Provider (内容提供者）
 
 内容提供者组件通过请求从一个应用程序向其他的应用程序提供数据。这些请求由类 ContentResolver 的方法来处理。内容提供者可以使用不同的方式来存储数据。数据可以被存放在数据库，文件，甚至是网络。
-![](../imgs/content.jpg)
+![](./imgs/content.jpg)
 
 # Fragment(碎片化)
 
