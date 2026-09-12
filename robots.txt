@@ -3,4 +3,4 @@ Disallow: /
 Allow: /$
 Allow: /posts/
 
-Sitemap: http://niushaoxiong.top/blog/sitemap-index.xml
+Sitemap: https://niushaoxiong.top/sitemap-index.xml
