@@ -1,0 +1,48 @@
+---
+title: "ROS学习网站总结"
+published: 2026-01-05
+description: "ROS 学习资源汇总，整理开源项目、论坛博客、课程文档和机器人开发参考网站。"
+category: 机器人
+tags: [ROS2]
+---
+
+
+# 参考资料:  
+
+## 参考开源项目
+**HandsFree平台**: https://github.com/HANDS-FREE ,最初由西北工业大学创建的一个开源机器人软硬件平台，后中科院，厦大等多个团队加入共同维护。   
+**awesome-ros-mobile-robot**：https://github.com/shannon112/awesome-ros-mobile-robot ,提供关于基于ROS的自主移动机器人（AMR）研究的有用资源和信息，网站链接，视频文本资料等。主要聚焦于移动机器人的基本功能（如里程计、SLAM、导航等）  
+**Bot_Brain**: https://github.com/botbotrobotics/BotBrain 是一个模块化的开源软件和硬件组件集合，让你可以通过一个简单但强大的网页界面，驾驶、观察、绘制地图、导航（手动或自主）、监控和管理有腿（四足、双足和类人）或轮式 ROS2 机器人,包含人工智能AI感知功能。   
+**ArduPilot项目**:https://github.com/ArduPilot/ardupilot ,ArduPilot 是最先进、功能最完善且最可靠的开源自动驾驶仪软件。能够控制几乎所有可想象的车辆系统，从传统飞机、四翼飞机、多旋翼机、直升机到漫游车、船只、平衡机器人，甚至潜艇。 
+
+## 论坛博客
+[蓝鲸智能机器人](https://community.bwbot.org/)：https://community.bwbot.org/  蓝鲸智能机器人官方技术论坛   
+[创客智造](https://www.ncnynl.com/)：https://www.ncnynl.com/ 
+[古月居](https://www.guyuehome.com/)： https://www.guyuehome.com/  全球中文地区领先的ROS机器人知识分享社区      
+[鱼香ROS社区](https://fishros.org.cn/forum/)：https://fishros.org.cn/forum/  
+
+
+
+# 机器人 Web Tool
+
+web tool: https://robotwebtools.github.io/
+
+ROSbridge 协议(json对象)：https://github.com/RobotWebTools/rosbridge_suite/blob/ros2/ROSBRIDGE_PROTOCOL.md
+
+
+# 建图及导航(Nav2)
+
+Nav2官网：https://docs.nav2.org/    
+Nav2中文网(鱼香Ros社区)：http://dev.nav2.fishros.com/   
+
+Nav2 基础配置指南：https://docs.nav2.org/configuration/index.html   
+Nav2 细节配置指南：https://docs.nav2.org/tuning/index.html        
+
+Nav2 默认插件列表及自定义插件教程： https://docs.nav2.org/plugins/index.html#plugins   
+
+Nav2 API 文档(**底层算法API**)： https://api.nav2.org/    
+Nav2 Simple Commander API文档(**上层应用API**)：https://docs.nav2.org/commander_api/index.html   
+
+
+
+

@@ -1,0 +1,218 @@
+---
+title: "docker命令"
+published: 2026-01-18
+description: "Docker 命令笔记，整理容器生命周期、镜像、网络、数据卷和常用运维指令。"
+category: docker
+tags: [docker]
+---
+
+# 容器生命周期管理
+```bash
+# 创建并启动一个新的容器
+run 
+
+# 这些命令主要用于启动、停止和重启容器
+start/stop/restart 
+ 
+# 立即终止一个或多个正在运行的容器
+kill 
+
+# 删除一个或多个已经停止的容器
+rm 
+
+# 暂停和恢复容器中的所有进程
+pause/unpause 
+
+# 创建一个新的容器，但不会启动它
+create 
+
+# 在运行中的容器内执行一个新的命令
+exec
+
+# 重命名容器
+rename 
+
+```
+
+# 容器操作
+```bash
+# 列出 Docker 容器
+ps
+
+# 获取 Docker 对象（容器、镜像、卷、网络等）的详细信息
+inspect
+
+# 显示指定容器中的正在运行的进程
+top
+
+# 允许用户附加到正在运行的容器并与其交互
+attach
+
+# 获取 Docker 守护进程生成的事件
+events
+
+# 获取和查看容器的日志输出
+logs
+
+# 允许用户等待容器停止并获取其退出代码
+wait
+
+# 将容器的文件系统导出为 tar 归档文件
+export
+
+# 显示容器的端口映射信息
+port
+
+# 实时显示 Docker 容器的资源使用情况
+stats
+
+# 更新 Docker 容器的资源限制，包括内存、CPU 等
+update
+
+# 删除一个或多个已经停止的容器
+rm
+
+# 暂停和恢复容器中的所有进程
+pause/unpause
+
+# 创建一个新的容器，但不会启动它
+create
+
+# 在运行中的容器内执行一个新的命令
+exec
+
+# 重命名容器
+rename
+
+```
+
+
+# 容器的root文件系统（rootfs）命令
+
+```bash
+# 将容器的当前状态保存为新的 Docker 镜像
+commit
+
+# 在容器和宿主机之间复制文件或目录
+cp
+
+# 显示 Docker 容器文件系统的变更
+diff
+```
+
+# 镜像仓库
+
+```bash
+# 管理 Docker 客户端与 Docker 注册表的身份验证
+login/logout
+
+# 从 Docker 注册表（例如 Docker Hub）中拉取（下载）镜像到本地
+pull
+
+# 将本地构建的 Docker 镜像推送（上传）到 Docker 注册表（如 Docker Hub 或私有注册表）
+push
+
+# 用于在 Docker Hub 或其他注册表中搜索镜像
+search
+```
+
+# 本地镜像管理
+```bash
+# 列出本地的 Docker 镜像
+images
+
+# 删除不再需要的镜像
+rmi
+
+# 创建本地镜像的别名（tag）
+tag
+
+# 从 Dockerfile 构建 Docker 镜像
+build
+
+# 查看指定镜像的历史层信息
+history
+
+# 将一个或多个 Docker 镜像保存到一个 tar 归档文件中
+save
+
+# 从由 docker save 命令生成的 tar 文件中加载 Docker 镜像
+load
+
+# 从一个 tar 文件或 URL 导入容器快照，从而创建一个新的 Docker 镜像
+import
+
+# 显示 Docker 的系统级信息，包括当前的镜像和容器数量
+info
+
+# 显示 Docker 客户端和服务端的版本信息
+version
+
+```
+
+# Docker Compose
+```bash
+# 启动一个新容器并运行一个特定的应用程序
+docker compose run
+
+# 删除一个特定的应用程序（及相关容器）
+docker compose rm
+
+# 从 docker compose 检查 docker 容器状态
+docker compose ps
+
+# 构建 docker compose 文件
+docker compose build
+
+# 运行 docker compose 文件
+docker compose up
+
+# 列出 docker compose 服务
+docker compose ls
+
+# 启动 docker compose 文件创建的容器
+docker compose start
+
+# 重启 docker compose 文件创建的容器
+docker compose restart
+
+```
+
+# 网络命令
+```bash
+# 列出所有网络
+docker network ls
+
+# 查看网络详细信息
+docker network inspect
+
+# 创建一个新的网络
+docker network create <network>
+
+# 删除指定的网络
+docker network rm <network>
+
+# 连接容器到网络
+docker network connect <network> <container>
+
+# 断开容器与网络的连接
+docker network disconnect <network> <container>
+```
+
+# 卷命令
+```bash
+# 列出所有卷
+docker volume ls
+
+# 创建一个新的卷
+docker volume create <volume>
+
+# 删除指定的卷
+docker volume rm <volume>
+
+# 删除未使用的卷
+docker volume prune
+
+# 显示卷的详细信息
+docker volume inspect <volume>
+```
