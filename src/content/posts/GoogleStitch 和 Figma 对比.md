@@ -1,9 +1,9 @@
 ---
-title: "Google Stitch 和 Figma 对比"
-date: 2026-06-05
-categories:
-  - UI设计
-excerpt: "Google Stitch 与 Figma 对比笔记，整理 AI 生成、协作、设计系统、原型和代码导出的差异。"
+title:  "Google Stitch 和 Figma 对比"
+published: 2026-06-05
+description: "Google Stitch 与 Figma 对比笔记，整理 AI 生成、协作、设计系统、原型和代码导出的差异。"
+category: UI设计
+tags: [UI]
 ---
 
 # Google Stitch 和 Figma 对比

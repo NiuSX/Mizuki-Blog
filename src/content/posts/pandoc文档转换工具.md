@@ -1,9 +1,9 @@
 ---
 title: "Pandoc 文档转换工具"
-date: 2026-05-18
-categories:
-  - 工具
-excerpt: "Pandoc 文档转换工具笔记，整理安装、Typora 配置、格式转换、模板样式和常用导出场景。"
+published: 2026-05-18
+description: "Pandoc 文档转换工具笔记，整理安装、Typora 配置、格式转换、模板样式和常用导出场景。"
+category: 工具
+tags: []
 ---
 
 

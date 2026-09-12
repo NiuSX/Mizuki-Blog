@@ -1,9 +1,9 @@
 ---
 title: "AI编程范式浅了解"
-date: 2026-05-08
-categories:
-  - AI
-excerpt: "AI 编程范式笔记，整理 vibe coding、spec coding、工程化协作方式和实践优劣。"
+published: 2026-05-08
+description: "AI 编程范式笔记，整理 vibe coding、spec coding、工程化协作方式和实践优劣。"
+category: AI
+tags: [AI]
 ---
 
 # 介绍

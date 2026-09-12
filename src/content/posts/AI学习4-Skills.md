@@ -1,9 +1,9 @@
 ---
 title: "AI学习(四）- Skills"
-date: 2026-03-10
-categories:
-  - AI
-excerpt: "AI Skills 学习笔记，整理技能机制、文件结构、调用流程、适用场景和实践要点。"
+published: 2026-03-10
+description: "AI Skills 学习笔记，整理技能机制、文件结构、调用流程、适用场景和实践要点。"
+category: AI
+tags: [skills]
 ---
 
 # 简介

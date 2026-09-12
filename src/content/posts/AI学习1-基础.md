@@ -1,9 +1,9 @@
 ---
 title: "AI学习(一）- 基础"
-date: 2026-03-01
-categories:
-  - AI
-excerpt: "AI 基础学习笔记，整理智能体结构、任务拆解、工具调用、运行方式和核心概念。"
+published: 2026-03-01
+description: "AI 基础学习笔记，整理智能体结构、任务拆解、工具调用、运行方式和核心概念。"
+category: AI
+tags: []
 ---
 
 

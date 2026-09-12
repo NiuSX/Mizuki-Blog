@@ -1,9 +1,9 @@
 ---
 title: "AI学习(三）- RAG"
-date: 2026-03-07
-categories:
-  - AI
-excerpt: "RAG 学习笔记，整理检索增强生成的原理、流程、向量检索、知识库构建和应用实践。"
+published: 2026-03-07
+description: "RAG 学习笔记，整理检索增强生成的原理、流程、向量检索、知识库构建和应用实践。"
+category: AI
+tags: [RAG]
 ---
 
 

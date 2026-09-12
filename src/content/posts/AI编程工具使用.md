@@ -1,9 +1,9 @@
 ---
 title: "AI 编程工具使用"
-ddata: 2026-04-25
-categories:  
-  - AI 工具
-excerpt: "AI 编程工具使用笔记，整理 Gemini、CLI、IDE 插件、配置流程和日常开发使用方式。"
+published: 2026-04-25
+description: "AI 编程工具使用笔记，整理 Gemini、CLI、IDE 插件、配置流程和日常开发使用方式。"
+category: 工具
+tags: [AI]
 ---
 
 

@@ -1,12 +1,9 @@
 ---
 title: "PDDL规划语言"
-date: 2026-02-27
-categories:
-  - AI
-tags: 
-  - PDDL
-  - 符号主义
-excerpt: "PDDL 规划语言笔记，整理对象、谓词、初始状态、目标、动作和规划建模方法。"
+published: 2026-02-27
+description:  "PDDL 规划语言笔记，整理对象、谓词、初始状态、目标、动作和规划建模方法。"
+category: AI
+tags: [PDDL,符号主义]
 ---
 
 

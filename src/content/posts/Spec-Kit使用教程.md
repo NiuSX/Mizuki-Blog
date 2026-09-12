@@ -1,10 +1,9 @@
 ---
 title: "Spec-kit使用教程"
-date: 2026-05-13
-categories:
-  - AI
-  - SDD
-excerpt: "Spec Kit 使用教程，整理安装配置、规范驱动开发流程、命令用法和项目落地步骤。"
+published: 2026-05-13
+description: "Spec Kit 使用教程，整理安装配置、规范驱动开发流程、命令用法和项目落地步骤。"
+category: 工具
+tags: [AI,SDD]
 ---
 
 # Spec- Kit 

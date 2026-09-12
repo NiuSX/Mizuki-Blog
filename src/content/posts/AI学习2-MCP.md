@@ -1,9 +1,9 @@
 ---
 title: "AI学习(二）- MCP"
-date: 2026-03-05
-categories:
-  - AI
-excerpt: "MCP 学习笔记，整理协议背景、JSON-RPC 通信、工具接入、生态组件和应用场景。"
+published: 2026-03-05
+description:  "MCP 学习笔记，整理协议背景、JSON-RPC 通信、工具接入、生态组件和应用场景。"
+category: AI
+tags: []
 ---
 
 # MCP入门

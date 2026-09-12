@@ -1,10 +1,9 @@
 ---
 title: "代码版本管理与Git学习笔记(AI整理)"
-date: 2026-04-15
-categories:
-  - 工具
-  - Git
-excerpt: "一份围绕代码版本管理、Git 工具、分支协作、提交规范和 Commit Message 标准的完整学习笔记。"
+published: 2026-04-15
+description: "一份围绕代码版本管理、Git 工具、分支协作、提交规范和 Commit Message 标准的完整学习笔记。"
+category: 工具
+tags: [Git]
 ---
 
 # 代码版本管理与 Git 学习笔记

@@ -1,9 +1,9 @@
 ---
 title: "UI设计了解(AI生成)"
-date: 2026-06-04
-categories:
-  - UI设计
-excerpt: "UI 设计入门笔记，整理界面概念、常见场景、设计目标、可用性和基础工作流程。"
+published: 2026-06-04
+description: "UI 设计入门笔记，整理界面概念、常见场景、设计目标、可用性和基础工作流程。"
+category: UI设计
+tags: [UI]
 ---
 
 ## 1. UI 设计是什么

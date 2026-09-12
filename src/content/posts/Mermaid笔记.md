@@ -1,9 +1,9 @@
 ---
-title: "Mermaid笔记(AI生成）"
-date: 2026-06-08
-categories:
-  - 其他
-excerpt: "Mermaid 学习笔记，整理文本绘图语法、流程图、时序图、架构图、适用场景和常见示例。"
+title:  "Mermaid笔记(AI生成）"
+published: 2026-06-08
+description: "Mermaid 学习笔记，整理文本绘图语法、流程图、时序图、架构图、适用场景和常见示例。"
+category: 其他
+tags: []
 ---
 
 

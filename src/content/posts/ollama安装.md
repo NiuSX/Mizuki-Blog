@@ -1,10 +1,9 @@
 ---
 title: "ollama安装"
-date: 2026-03-05
-categories:
-  - ollama
-  - AI
-excerpt: "Ollama 安装笔记，整理 Windows 安装、模型目录配置、环境变量和本地模型运行方法。"
+published: 2026-03-05
+description: "Ollama 安装笔记，整理 Windows 安装、模型目录配置、环境变量和本地模型运行方法。"
+category: AI
+tags: [ollama,本地部署]
 ---
 
 # 安装

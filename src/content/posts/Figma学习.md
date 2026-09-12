@@ -1,9 +1,9 @@
 ---
 title: "Figma简单学习(AI生成)"
-date: 2026-06-05
-categories:
-  - UI设计
-excerpt: "Figma 学习笔记，整理云端协作、界面设计、原型制作、组件库和设计交付基础。"
+published: 2026-06-05
+description: "Figma 学习笔记，整理云端协作、界面设计、原型制作、组件库和设计交付基础。"
+category: UI设计
+tags: [UI]
 ---
 
 

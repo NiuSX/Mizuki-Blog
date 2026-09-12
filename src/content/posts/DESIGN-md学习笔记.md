@@ -1,9 +1,9 @@
 ---
 title: "DESIGN.md 文档学习（AI总结整理）"
-date: 2026-06-22
-categories:
-  - UI设计
-excerpt: "DESIGN.md 学习笔记，整理设计规范文档的作用、结构、写法、约束内容和 AI 协作方式。"
+published: 2026-06-22
+description: "DESIGN.md 学习笔记，整理设计规范文档的作用、结构、写法、约束内容和 AI 协作方式。"
+category: UI设计
+tags: [UI]
 ---
 
 # 1. DESIGN.md 是什么

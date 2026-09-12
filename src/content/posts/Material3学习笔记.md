@@ -1,9 +1,9 @@
 ---
 title: "Material3学习(AI总结整理)"
-date: 2026-06-18
-categories:
-  - UI
-excerpt: "Material 3 学习笔记，整理设计原则、动态颜色、组件规范、状态层和 Android Compose 实践。"
+published: 2026-06-18
+description: "Material 3 学习笔记，整理设计原则、动态颜色、组件规范、状态层和 Android Compose 实践。"
+category: UI
+tags: [UI,Material3]
 ---
 
 ## 1. 介绍

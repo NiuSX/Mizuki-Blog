@@ -1,9 +1,9 @@
 ---
 title: "KMP 多平台项目配置(未完待续）"
-ddata: 2026-04-23
-categories:  
-  - Kotlin
-excerpt: "KMP 多平台项目配置笔记，整理 Kotlin Multiplatform 的模块结构、平台配置、依赖和构建流程。"
+published: 2026-04-23
+description: "KMP 多平台项目配置笔记，整理 Kotlin Multiplatform 的模块结构、平台配置、依赖和构建流程。"
+category: 架构
+tags: [Kotlin，KMP]
 ---
 
 

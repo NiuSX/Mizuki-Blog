@@ -1,9 +1,9 @@
 ---
 title: "UI设计术语总结(AI生成)"
-date: 2026-06-01
-categories:
-  - UI设计
-excerpt: "UI 设计术语笔记，整理设计对象、视觉规则、交互行为、响应式适配和协作规范。"
+published: 2026-06-01
+description: "UI 设计术语笔记，整理设计对象、视觉规则、交互行为、响应式适配和协作规范。"
+category: UI设计
+tags: [UI]
 ---
 
 

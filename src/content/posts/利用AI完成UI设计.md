@@ -1,9 +1,9 @@
 ---
 title: "利用 AI 完成 UI 设计"
-date: 2026-06-05
-categories:
-  - UI设计
-excerpt: "AI UI 设计工具笔记，整理 Claude Design、Open Design、Google Stitch 的能力、费用和使用场景。"
+published: 2026-06-05
+description: "AI UI 设计工具笔记，整理 Claude Design、Open Design、Google Stitch 的能力、费用和使用场景。"
+category: UI设计
+tags: [UI]
 ---
 
 

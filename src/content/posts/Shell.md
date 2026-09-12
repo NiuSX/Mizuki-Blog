@@ -1,10 +1,9 @@
 ---
 title: "Shell语言"
-ddata: 2026-04-11
-categories:  
-  - 命令语言
-  - 编程语言
-excerpt: "Shell 学习笔记，整理命令行基础、脚本语法、变量、条件循环、管道和常用工具。"
+published: 2026-04-11
+description: "Shell 学习笔记，整理命令行基础、脚本语法、变量、条件循环、管道和常用工具。"
+category: 命令语言
+tags: []
 ---
 
 # 介绍

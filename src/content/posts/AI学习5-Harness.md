@@ -1,9 +1,9 @@
 ---
 title: "AI学习(五）- HarnessEngineering(未完待续)"
-date: 2026-04-25
-categories:
-  - AI
-excerpt: "Harness Engineering 学习笔记，整理 Agent 运行框架、上下文管理、工具调用、验证闭环和工程实践。"
+published: 2026-04-25
+description: "Harness Engineering 学习笔记，整理 Agent 运行框架、上下文管理、工具调用、验证闭环和工程实践。"
+category: AI
+tags: [HarnessEngineering]
 ---
 
 
