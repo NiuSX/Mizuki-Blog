@@ -37,7 +37,7 @@ tags: []
 
 Agent架构图：    
 
-<img src="../imgs/ai_basic/Agent_Architecture.png"/>
+<img src="../imgs/Agent_Architecture.png"/>
 
 # 简介
 
@@ -56,7 +56,7 @@ LPMT:
 - Tool use: 能够根据需求去查谷歌搜索、读数据库、甚至跑 Python 代码。
 
 
-<img src="../imgs/ai_basic/Agent_architecture1.png"/>
+<img src="../imgs/Agent_architecture1.png"/>
 
 Agent 与传统AI 模型区别：
 
@@ -82,7 +82,7 @@ Agent 与传统AI 模型区别：
 
 AI Agent 模块构成：
 
-<img src="../imgs/ai_basic/Agent_module.png" height="500"/>
+<img src="../imgs/Agent_module.png" height="500"/>
 
 1、**规划模块**：任务的大脑与指挥官
 
@@ -158,7 +158,7 @@ Agent 需要有记忆才能进行连贯的、基于上下文的对话和操作�
 
 ### 大模型工作流程
 
-<img src="../imgs/ai_basic/LargeModels_workflow.jpg"/>
+<img src="../imgs/LargeModels_workflow.jpg"/>
 
 | 环节                               | 解释                                                         |
 | ---------------------------------- | ------------------------------------------------------------ |
