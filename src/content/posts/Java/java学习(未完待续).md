@@ -78,7 +78,7 @@ JRE（Java Runtime Environment）
 JVM（Java Virtual Machine）java虚拟机    
 
 
-![](../imgs/Java/JDK_JRE_JVM.png)
+![](../imgs/JDK_JRE_JVM.png)
 
 JDK	包含 JRE + 开发工具   
 JRE	包含 JVM + 核心类库   
@@ -109,7 +109,7 @@ Java字节码是一种基于栈的指令集，它使用压栈、出栈等操作�
 
 Java字节码通常由Java编译器生成，它们以.class文件的形式存储。当Java程序被执行时，Java虚拟机会将字节码加载到内存中，并进行解释执行。在执行过程中，Java虚拟机会根据需要将字节码转换成本地代码，从而提高程序的执行效率
 
-![](../imgs/Java/Java%20source%20code_compiled%20runtime.png)
+![](../imgs/Java_source_code_compiled_runtime.png)
 
 **JVM的优点**
 - 跨平台性：即“Write once , Run Anywhere” ，这是Java的核心优势。比如：Java的int永远都是32位。不像C++可能是16，32，可能是根据编译器厂商规定的变化。 Java字节码可以在任何安装了Java虚拟机的硬件平台和操作系统上运行，这使得Java程序具有很好的可移植和跨平台特性。

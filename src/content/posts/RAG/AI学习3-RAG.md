@@ -25,11 +25,11 @@ RAG技术的落地主要由以下几个步骤组成：
 
 （6）大语言模型生成结果
 
-![](../imgs/RAG/RAG_1.jpg)
+![](../imgs/RAG_1.jpg)
 
 RAG全栈技术框架：
 
-![](../imgs/RAG/RAG_architecture.jpg)
+![](../imgs/RAG_architecture.jpg)
 
 **GraphRAG**：
 

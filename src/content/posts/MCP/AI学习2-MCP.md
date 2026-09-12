@@ -51,7 +51,7 @@ MCP则采用了一种**通用语言格式**（JSON - RPC），一次学习就能
 
 MCP采用CS架构（客户端-服务器），MCP的技术架构可以简单理解为一个由三个核心部分组成的系统：MCP Host、MCP Client和MCP Server，总体架构
 
-![](../imgs/MCP/MCP_architecture.jpg)
+![](../imgs/MCP_architecture.jpg)
 
  **MCP主机（MCP Hosts)**
 
@@ -158,7 +158,7 @@ SSE 虽然在早期实现服务端推送场景中提供了一种简洁方式，�
 
 ## 工作流程
 
-![](../imgs/MCP/MCP_work_progress.jpg)
+![](../imgs/MCP_work_progress.jpg)
 
 **连接：建立通信通道**
 

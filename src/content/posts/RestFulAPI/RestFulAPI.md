@@ -32,14 +32,14 @@ API 的主要作用包括：
 - 系统解耦：让前端和后端可以独立开发
 - 安全控制：控制谁可以访问什么数据
 
-![](../imgs/RestFulAPI/API.png)
+![](../imgs/API.png)
 
 ## RESTful API
 REST API（Representational State Transfer Application Programming Interface）是一种基于HTTP协议的软件架构风格，用于构建网络应用程序接口。   
 REST API 是现代 Web 服务开发中最常用的 API 设计模式之一，在现代 Web 开发中，RESTful API 已成为应用程序之间通信的标准方式。   
 RESTful API 是遵循 REST 架构风格设计的 API。它使用HTTP协议的特性，通过 URL 定位资源，用 HTTP 方法（GET、POST等）描述操作，实现客户端与服务器之间的交互。   
 
-![](../imgs/RestFulAPI/RESTAPI.png)
+![](../imgs/RESTAPI.png)
 
 **特点：**   
 - 无状态：每个请求包含处理所需的所有信息
@@ -493,7 +493,7 @@ async function getUser(userId) {
 **服务间通信**
 服务间通信是指在分布式系统（特别是微服务架构）中，不同服务之间相互调用、交换数据的过程。当一个服务需要另一个服务提供的数据或功能时，就需要通过服务间通信来实现。
 
-![](../imgs/RestFulAPI/Services_Communciation.png)
+![](../imgs/Services_Communciation.png)
 
 **API网关模式**
 API网关模式是一种架构设计模式，它在客户端和后端服务之间引入一个统一的入口点，作为所有API请求的反向代理和流量管理中间层

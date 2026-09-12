@@ -102,7 +102,7 @@ LangChain 提供多种文档加载器和文本处理工具，通常在 `langchai
 
 ## LangChain核心模块
 
-![](../imgs/langchain/LangchainFlow.jpg)
+![](../imgs/LangchainFlow.jpg)
 
 **LLM 大模型接口**
 
@@ -777,7 +777,7 @@ LCEL，全称为 LangChain Expression Language，是一种专为 LangChain 框�
 
 在LangChain中，一个基本的`Chain`结构主要由三部分构成，分别是提示词模板、大模型和结果解析器（结构化解析器）
 
-![](../imgs/langchain/langchainDataFlow.jpg)
+![](../imgs/langchainDataFlow.jpg)
 
 - Prompt：Prompt 是一个 BasePromptTemplate，这意味着它接受一个模板变量的字典并生成一个PromptValue 。PromptValue 可以传递给 model（它以字符串作为输入）或 ChatModel（它以消息序列作为输入）。
 - Model：将 PromptValue 传递给 model。如果我们的 model 是一个 ChatModel，这意味着它将输出一个 BaseMessage 。
@@ -1486,7 +1486,7 @@ Function Calling 最早是 OpenAI 在其 API 中引入的一项功能，允许�
 
 Agent工作流程：
 
-![](../imgs/langchain/AgentWork.jpg)
+![](../imgs/AgentWork.jpg)
 
 1. 输入解析：语言模型分析用户输入，理解任务目标。
 2. 推理规划：使用推理框架（如 ReAct）生成操作计划；决定是否调用工具、调用哪些工具以及调用顺序。
