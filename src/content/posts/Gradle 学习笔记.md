@@ -1,6 +1,6 @@
 ---
 title: "Gradle构建工具(AI整理）"
-published: 2026-3-16
+published: 2026-03-16
 description: "Gradle 构建工具笔记，整理项目结构、脚本配置、依赖管理、任务机制和 Android 构建实践。"
 category: 构建工具
 tags: [gradle]
