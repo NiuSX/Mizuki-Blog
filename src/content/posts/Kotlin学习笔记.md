@@ -1,5 +1,5 @@
 ---
-title: "Kotlin学习笔记""Kotlin学习笔记"
+title: "Kotlin学习笔记"
 published: 2026-01-20
 description:  "系统整理 Kotlin 从基础语法到工程实践的学习笔记，涵盖类型系统、函数、类与对象、集合、泛型、协程与 Flow、Java 互操作、Android 开发、Kotlin 多平台以及常用编码习惯。"
 category: 编程语言
