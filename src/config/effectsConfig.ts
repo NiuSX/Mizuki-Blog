@@ -7,7 +7,7 @@ export const sakuraConfig: SakuraConfig = {
 	limitTimes: -1,
 	size: {
 		min: 0.5, // 樱花最小尺寸倍数
-		max: 1.1, // 樱花最大尺寸倍数
+		max: 0.8, // 樱花最大尺寸倍数
 	},
 	opacity: {
 		min: 0.3, // 樱花最小不透明度
