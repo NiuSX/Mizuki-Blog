@@ -1,58 +1,92 @@
 ---
+// 导入 Astro 的 Page 类型（分页信息）
 import type { Page } from "astro";
+// 导入 astro-icon 的 Icon 组件
 import { Icon } from "astro-icon/components";
 
+// 导入 url 工具（给路径加上 base 前缀，支持子目录部署）
 import { url } from "../../utils/url-utils";
 
+/**
+ * 分页组件属性定义
+ */
 interface Props {
+	/** Astro 提供的分页对象（含 currentPage / lastPage / url 等） */
 	page: Page;
+	/** 外部传入的额外类名 */
 	class?: string;
+	/** 外部传入的内联样式 */
 	style?: string;
 }
 
+// 解构 props
+// 注意：class 单独取出（保留字），style 直接解构
 const { page, style } = Astro.props;
 
+/** 用于表示"省略号"的哨兵值（-1） */
 const HIDDEN = -1;
 
+// 单独取出 class（保留字，需重命名）
 const className = Astro.props.class;
 
+/**
+ * 页码显示范围参数：
+ * - ADJ_DIST: 当前页左右各显示的相邻页数
+ * - VISIBLE:  中间连续页码区的最大宽度（左右各 2 个 + 自身 = 5）
+ */
 const ADJ_DIST = 2;
 const VISIBLE = ADJ_DIST * 2 + 1;
 
+// ===== 计算中间连续页码区 [l, r] =====
+// 初始：l = r = 当前页，count = 1（当前页本身）
 // for test
 let count = 1;
 let l = page.currentPage;
 let r = page.currentPage;
+
+// 第 1 轮：左右同时扩展，直到达到 VISIBLE 或触达边界
 while (0 < l - 1 && r + 1 <= page.lastPage && count + 2 <= VISIBLE) {
 	count += 2;
 	l--;
 	r++;
 }
+// 第 2 轮：左侧还有空间时，继续向左扩展
 while (0 < l - 1 && count < VISIBLE) {
 	count++;
 	l--;
 }
+// 第 3 轮：右侧还有空间时，继续向右扩展
 while (r + 1 <= page.lastPage && count < VISIBLE) {
 	count++;
 	r++;
 }
 
+// ===== 构建最终页码序列 =====
 const pages: number[] = [];
+
+// 左侧省略部分：始终保留第 1 页（首屏锚点）
 if (l > 1) {
 	pages.push(1);
 }
+// 若 l === 3，说明第 2 页紧邻，直接显示（避免只有一个 HIDDEN）
 if (l === 3) {
 	pages.push(2);
 }
+// 若 l > 3，说明第 2 页到 l-1 页跨度较大，用 HIDDEN 省略
 if (l > 3) {
 	pages.push(HIDDEN);
 }
+
+// 中间连续页码区
 for (let i = l; i <= r; i++) {
 	pages.push(i);
 }
+
+// 右侧省略部分：始终保留最后一页（末页锚点）
 if (r < page.lastPage - 2) {
 	pages.push(HIDDEN);
 }
+// 若 r === lastPage - 2，说明倒数第 2 页紧邻，直接显示
 if (r === page.lastPage - 2) {
 	pages.push(page.lastPage - 1);
 }
@@ -60,6 +94,12 @@ if (r < page.lastPage) {
 	pages.push(page.lastPage);
 }
 
+/**
+ * 将页码转为对应的 URL
+ * 第 1 页特殊处理为根路径（避免 /1/ 这种冗余 URL）
+ * @param {number} p 页码
+ * @returns {string} 页面路径
+ */
 const getPageUrl = (p: number) => {
 	if (p === 1) {
 		return "/";
@@ -68,10 +108,12 @@ const getPageUrl = (p: number) => {
 };
 ---
 
+<!-- 分页容器：横向排列，居中，间距 0.75rem -->
 <div
 	class:list={[className, "flex flex-row gap-3 justify-center"]}
 	style={style}
 >
+	<!-- 上一页按钮：page.url.prev 为空时加上 disabled 类 -->
 	<a
 		href={page.url.prev || ""}
 		aria-label="上一页"
@@ -85,38 +127,46 @@ const getPageUrl = (p: number) => {
 			class="text-[1.75rem]"
 		/>
 	</a>
+
+	<!-- 页码区容器 -->
 	<div
 		class="bg-(--card-bg) flex flex-row rounded-lg items-center text-neutral-700 dark:text-neutral-300 font-bold"
 	>
 		{
+			// 遍历页码序列，分三种情况渲染
 			pages.map((p) => {
+			// 情况 1：HIDDEN（-1）→ 渲染省略号图标
 				if (p == HIDDEN) {
-					return (
-						<Icon name="material-symbols:more-horiz" class="mx-1" />
-					);
-				}
-				if (p == page.currentPage) {
-					return (
-						<div
-							class="h-11 w-11 rounded-lg bg-(--primary) flex items-center justify-center
-                    font-bold text-white dark:text-black/70"
-						>
-							{p}
-						</div>
-					);
-				}
 				return (
-					<a
-						href={url(getPageUrl(p))}
-						aria-label={`Page ${p}`}
-						class="btn-card w-11 h-11 rounded-lg overflow-hidden active:scale-[0.85]"
+					<Icon name="material-symbols:more-horiz" class="mx-1" />
+				);
+			}
+			// 情况 2：当前页 → 渲染高亮方块（不可点击）
+				if (p == page.currentPage) {
+				return (
+					<div
+						class="h-11 w-11 rounded-lg bg-(--primary) flex items-center justify-center
+                    font-bold text-white dark:text-black/70"
 					>
 						{p}
-					</a>
+					</div>
 				);
-			})
+			}
+			// 情况 3：普通页码 → 渲染可点击链接
+				return (
+				<a
+					href={url(getPageUrl(p))}
+					aria-label={`Page ${p}`}
+					class="btn-card w-11 h-11 rounded-lg overflow-hidden active:scale-[0.85]"
+				>
+					{p}
+				</a>
+			);
+		})
 		}
 	</div>
+
+	<!-- 下一页按钮：page.url.next 为空时加上 disabled 类 -->
 	<a
 		href={page.url.next || ""}
 		aria-label="下一页"

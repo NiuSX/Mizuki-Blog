@@ -1,53 +1,77 @@
 ---
+// 导入 astro-icon 的 Icon 组件
 import { Icon } from "astro-icon/components";
 
+// 导入 i18n 相关
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 
+// 导入组件属性类型
 import type { WordCountProps } from "./types";
 
+// 继承 WordCountProps（保持与 ReadingTime 一致的写法）
 interface Props extends WordCountProps {}
 
+// 解构 props（用 as 标注类型）
+// variant 默认 "meta"（元信息样式）
 const { words, variant = "meta", class: className } = Astro.props as Props;
 
+/**
+ * card 变体的图标容器类（meta 变体不使用）
+ * 与 ReadingTime 组件的 containerClass 完全相同
+ */
 const containerClass =
-	variant === "meta"
-		? "flex items-center"
-		: "h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2";
+    variant === "meta"
+        ? "flex items-center"
+        : "h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2";
 ---
 
+<!-- 容器：横向排列，应用外部类名 -->
 <div class:list={["flex items-center", className]}>
-	{
-		variant === "meta" && (
-			<div class="meta-icon">
-				<Icon
-					name="material-symbols:article-outline-rounded"
-					class="text-xl"
-				/>
-			</div>
-		)
-	}
-	{
-		variant === "card" && (
-			<div class={containerClass}>
-				<Icon name="material-symbols:notes-rounded" class="text-xl" />
-			</div>
-		)
-	}
-	{
-		variant === "meta" && (
-			<span class="text-50 text-sm font-medium">
+    <!--
+      ===== 图标区 =====
+      - meta：.meta-icon（无背景，用 article 图标）
+      - card：containerClass（小方形背景，用 notes 图标）
+      注意：两种变体用了**不同的图标**（article vs notes）
+    -->
+    {
+        variant === "meta" && (
+                    <div class="meta-icon">
+                        <Icon
+                                name="material-symbols:article-outline-rounded"
+                                class="text-xl"
+                        />
+                    </div>
+        )
+    }
+    {
+        variant === "card" && (
+                    <div class={containerClass}>
+                        <Icon name="material-symbols:notes-rounded" class="text-xl" />
+                    </div>
+        )
+    }
+
+    <!--
+      ===== 文字区 =====
+      - meta 变体：带单复数处理（words > 1 用复数）
+      - card 变体：固定用复数（无单复数判断）
+      注意：两种变体的单复数处理不一致
+    -->
+    {
+        variant === "meta" && (
+                    <span class="text-50 text-sm font-medium">
 				{words}{" "}
-				{words > 1 ? i18n(I18nKey.wordsCount) : i18n(I18nKey.wordCount)}
+                        {words > 1 ? i18n(I18nKey.wordsCount) : i18n(I18nKey.wordCount)}
 			</span>
-		)
-	}
-	{
-		variant === "card" && (
-			<div class="text-sm">
-				{words}
-				{" " + i18n(I18nKey.wordsCount)}
-			</div>
-		)
-	}
+        )
+    }
+    {
+        variant === "card" && (
+                    <div class="text-sm">
+                        {words}
+                        {" " + i18n(I18nKey.wordsCount)}
+                    </div>
+        )
+    }
 </div>

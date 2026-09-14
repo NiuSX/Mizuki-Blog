@@ -1,21 +1,47 @@
 ---
+// 导入加密内容的样式（按钮、表单等视觉样式）
 import "@/styles/encrypted-content.css";
 
+// 导入加密工具：对 HTML 内容做加密处理
 import { encryptContent } from "@utils/crypto-utils";
 
+// 导入密码保护组件（负责在客户端渲染"输入密码"界面并解密）
 import PasswordProtection from "./PasswordProtection.astro";
 
+/**
+ * 组件属性定义
+ */
 export interface Props {
-	password: string | number;
-	slug: string;
-	hint?: string;
+    /** 访问密码（字符串或数字） */
+    password: string | number;
+    /** 唯一标识（用于生成加密密钥的 salt，保证不同页面/文章密钥不同） */
+    slug: string;
+    /** 密码提示（可选，显示给用户帮助回忆密码） */
+    hint?: string;
 }
 
+// 解构 props，hint 默认空字符串
 const { password, slug, hint = "" } = Astro.props;
 
+// ===== 关键：渲染默认插槽内容 =====
+// Astro.slots.render("default") 会把 <EncryptedContent>...</EncryptedContent>
+// 之间的子内容渲染为**HTML 字符串**
+// 这一步必须在服务端完成——内容会在此被加密，而不是以明文形式发送到浏览器
 const htmlContent = await Astro.slots.render("default");
 
+/**
+ * 加密内容
+ * - htmlContent: 上一步渲染出的原始 HTML
+ * - String(password): 密码（统一转字符串）
+ * - slug: 用作 salt，保证不同文章即使密码相同也用不同密钥
+ * @returns {string} 加密后的密文（Base64 或十六进制字符串）
+ */
 const encryptedContent = encryptContent(htmlContent, String(password), slug);
 ---
 
+<!--
+  把密文与提示传给客户端组件：
+  - 服务端只输出密文，明文不出现在最终 HTML 中（安全）
+  - 客户端输入正确密码后才解密并渲染
+-->
 <PasswordProtection encryptedContent={encryptedContent} hint={hint} />

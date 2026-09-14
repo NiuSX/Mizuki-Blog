@@ -1,10 +1,18 @@
 ---
+// 从配置入口导入评论配置
 import { commentConfig } from "@/config";
 
+/**
+ * 组件属性定义
+ */
 interface Props {
+	/** 当前页面路径，作为 Twikoo 评论区的唯一标识 */
 	path: string;
 }
 
+// 合并配置：展开 twikoo 基础配置，并覆盖 el 与 path
+// - el:      Twikoo 渲染的目标元素选择器
+// - path:    当前页面路径（服务端注入的初始值，客户端会再按实际路径校正）
 const config = {
 	...commentConfig.twikoo,
 	el: "#tcomment",
@@ -12,19 +20,35 @@ const config = {
 };
 ---
 
+<!-- 外层容器：供 IntersectionObserver 观察（懒加载触发点） -->
 <div id="twikoo-container" class="twikoo-container">
+	<!-- Twikoo 实际渲染的目标元素 -->
 	<div id="tcomment"></div>
 </div>
 
+<!--
+  is:inline  —— 不打包，直接内联到 HTML
+  define:vars —— 把服务端 config 注入到脚本作用域
+-->
 <script is:inline define:vars={{ config }}>
 	(function () {
+		// 外层容器 id（懒加载观察目标）
 		const TWIKOO_CONTAINER_ID = "twikoo-container";
+		// Twikoo 脚本路径（本地托管，避免依赖 CDN）
 		const TWIKOO_SCRIPT_URL = "/assets/js/twikoo.all.min.js";
+		// 懒加载提前量：距视口 200px 时开始加载
 		const ROOT_MARGIN = "200px";
 
+		// 懒加载观察器实例
 		let observer = null;
+		// 脚本加载状态标记（避免重复加载）
 		let twikooLoaded = false;
 
+		/**
+		 * 获取规范化后的当前路径
+		 * 去掉末尾斜杠，保证 term 一致
+		 * @returns {string} 规范化路径
+		 */
 		function getCurrentPath() {
 			const pathname = window.location.pathname;
 			return pathname.endsWith("/") && pathname.length > 1
@@ -32,6 +56,11 @@ const config = {
 				: pathname;
 		}
 
+		/**
+		 * 构造 Twikoo 的运行时配置
+		 * 用客户端实际路径覆盖服务端注入的 path（应对 SPA 切换后的路径变化）
+		 * @returns {Object} Twikoo 配置对象
+		 */
 		function createTwikooConfig() {
 			return {
 				...config,
@@ -40,7 +69,13 @@ const config = {
 			};
 		}
 
+		/**
+		 * 动态加载 Twikoo 脚本
+		 * 已加载或正在加载时直接返回，避免重复插入
+		 * @returns {Promise<void>}
+		 */
 		async function loadTwikooScript() {
+			// 已加载过，或 DOM 中已存在脚本标签 → 直接返回
 			if (
 				twikooLoaded ||
 				document.getElementById("twikoo-script-loaded")
@@ -49,6 +84,7 @@ const config = {
 			}
 			return new Promise((resolve, reject) => {
 				const script = document.createElement("script");
+				// 用 id 作为"已插入"的标记
 				script.id = "twikoo-script-loaded";
 				script.src = TWIKOO_SCRIPT_URL;
 				script.async = true;
@@ -61,6 +97,9 @@ const config = {
 			});
 		}
 
+		/**
+		 * 初始化 Twikoo：加载脚本 → 清空容器 → 调用 twikoo.init
+		 */
 		async function initTwikoo() {
 			const commentEl = document.getElementById("tcomment");
 			if (!commentEl) {
@@ -68,14 +107,18 @@ const config = {
 			}
 
 			try {
+				// 加载 Twikoo 脚本（幂等）
 				await loadTwikooScript();
 
+				// 全局 twikoo 对象未就绪 → 视为加载失败
 				if (typeof twikoo === "undefined") {
 					console.warn("[Twikoo] 脚本加载失败");
 					return;
 				}
 
+				// 清空容器，避免重复初始化时内容叠加
 				commentEl.innerHTML = "";
+				// 构造动态配置并初始化
 				const dynamicConfig = createTwikooConfig();
 				await twikoo.init(dynamicConfig);
 			} catch (error) {
@@ -83,6 +126,10 @@ const config = {
 			}
 		}
 
+		/**
+		 * 清理资源：断开观察器、注销 swup 钩子
+		 * 在页面卸载时调用，避免内存泄漏
+		 */
 		function cleanup() {
 			if (observer) {
 				observer.disconnect();
@@ -93,6 +140,9 @@ const config = {
 			}
 		}
 
+		/**
+		 * 设置懒加载：容器进入视口（提前 200px）时才加载并初始化 Twikoo
+		 */
 		function setupLazyLoad() {
 			const container = document.getElementById(TWIKOO_CONTAINER_ID);
 			if (!container) {
@@ -102,6 +152,7 @@ const config = {
 			observer = new IntersectionObserver(
 				(entries) => {
 					if (entries[0].isIntersecting) {
+						// 触发一次后立即断开
 						observer.disconnect();
 						observer = null;
 						initTwikoo();
@@ -113,12 +164,18 @@ const config = {
 			observer.observe(container);
 		}
 
+		/**
+		 * 注册 swup 钩子：页面切换后重新设置懒加载
+		 */
 		function setupSwupHooks() {
 			if (window.swup?.hooks) {
+				// swup 已就绪：直接注册
 				window.swup.hooks.on("content:replace", () => {
+					// 延迟 200ms 等待新 DOM 就绪
 					setTimeout(setupLazyLoad, 200);
 				});
 			} else {
+				// swup 尚未初始化：等 swup:enable 事件后再注册
 				document.addEventListener(
 					"swup:enable",
 					() => {
@@ -133,12 +190,15 @@ const config = {
 			}
 		}
 
+		// 监听自定义页面加载事件
 		document.addEventListener("mizuki:page:loaded", () => {
 			setupLazyLoad();
 		});
 
+		// 页面卸载前清理
 		window.addEventListener("beforeunload", cleanup);
 
+		// 根据文档加载状态决定初始化时机
 		if (document.readyState === "loading") {
 			document.addEventListener("DOMContentLoaded", () => {
 				setupLazyLoad();
@@ -152,7 +212,8 @@ const config = {
 </script>
 
 <style>
-	.twikoo-container {
-		min-height: 200px;
+/* 容器最小高度：避免加载前评论区塌陷导致布局抖动 */
+.twikoo-container {
+	min-height: 200px;
 	}
 </style>

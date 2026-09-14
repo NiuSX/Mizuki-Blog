@@ -1,5 +1,8 @@
+// 从 Node.js Promise 版 fs 模块导入文件读取方法
 import { readFile } from "node:fs/promises";
+// 导入 Node.js 路径模块
 import path from "node:path";
+// 导入 URL 转换工具，将 import.meta.url 转为文件路径
 import { fileURLToPath } from "node:url";
 
 // 解析项目根目录（当前脚本位于 scripts/ 下，所以向上一级）
@@ -18,9 +21,15 @@ const distDirectory = path.join(projectRoot, "dist");
  * @returns {string|undefined} 属性值，找不到则返回 undefined
  */
 function getAttribute(tag, name) {
+	// 构造匹配属性的正则，兼容三种引号写法：
+	// - "value"（双引号）
+	// - 'value'（单引号）
+	// - value（无引号，到空白或 > 结束）
+	// 使用 \b 保证属性名边界精确，i 忽略大小写
 	const match = tag.match(
 		new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, "i"),
 	);
+	// 按优先级返回：双引号捕获组 → 单引号捕获组 → 无引号捕获组
 	return match?.[1] ?? match?.[2] ?? match?.[3];
 }
 
@@ -33,8 +42,10 @@ function getAttribute(tag, name) {
  *   - stylesheetUrls: 页面引用的外链样式表 URL 列表
  */
 async function loadPageStyles(htmlPath) {
+	// 读取页面 HTML（相对于 dist 目录）
 	const html = await readFile(path.join(distDirectory, htmlPath), "utf8");
 
+	// 从 HTML 中提取所有外链样式表 URL：
 	// 1. 从 HTML 中找出所有 <link> 标签
 	// 2. 只保留 rel 包含 "stylesheet" 的
 	// 3. 取出它们的 href
@@ -45,6 +56,7 @@ async function loadPageStyles(htmlPath) {
 		}))
 		.filter(
 			({ href, rel }) =>
+				// rel 可能含多个值（如 "preload stylesheet"），需拆分后判断
 				href && rel?.split(/\s+/).some((value) => value === "stylesheet"),
 		)
 		.map(({ href }) => href);
@@ -59,7 +71,7 @@ async function loadPageStyles(htmlPath) {
 	// 读取每个外链样式表的实际内容
 	const linkedStyles = await Promise.all(
 		stylesheetUrls.map(async (stylesheetUrl) => {
-			// 去掉 query / hash，并解码 URL 编码
+			// 去掉 query / hash，并解码 URL 编码（如 %20 → 空格）
 			const pathname = decodeURIComponent(stylesheetUrl.split(/[?#]/, 1)[0]);
 
 			// 跳过外部链接（http/https//）和 data URI，这些不是本地文件
@@ -71,12 +83,14 @@ async function loadPageStyles(htmlPath) {
 			}
 
 			// 将 URL 路径解析为 dist 下的实际文件路径
+			// 站点根路径（/xxx）需去掉前导斜杠，避免 path.resolve 跳到系统根目录
 			const assetPath = path.resolve(
 				distDirectory,
 				pathname.startsWith("/") ? pathname.slice(1) : pathname,
 			);
 
 			// 安全检查：确保解析后的路径没有逃出 dist 目录（防目录穿越）
+			// 例如 ../../etc/passwd 之类的恶意路径
 			const relativePath = path.relative(distDirectory, assetPath);
 			if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
 				throw new Error(
@@ -91,6 +105,7 @@ async function loadPageStyles(htmlPath) {
 
 	return {
 		html,
+		// 内联样式与外链样式合并为一个字符串，方便后续统一查找规则
 		loadedCss: `${inlineStyles}\n${linkedStyles.join("\n")}`,
 		stylesheetUrls,
 	};
@@ -99,6 +114,7 @@ async function loadPageStyles(htmlPath) {
 // 要校验的页面清单
 // requiredMarkup: 页面 HTML 里必须出现的标记（字符串）
 // requiredRules:  加载的 CSS 里必须出现的规则/变量（字符串）
+// 数组格式为 [token, description]，token 是实际查找的字符串，description 是报错时的可读描述
 const pages = [
 	{
 		name: "Homepage",
@@ -125,9 +141,11 @@ const pages = [
 
 // 逐个页面执行校验
 for (const page of pages) {
+	// 加载页面及其所有相关 CSS
 	const { html, loadedCss, stylesheetUrls } = await loadPageStyles(page.htmlPath);
 
 	// 检查 HTML 中缺失的标记
+	// 只保留描述信息（token 仅用于查找，不进入报错信息）
 	const missingMarkup = page.requiredMarkup
 		.filter(([token]) => !html.includes(token))
 		.map(([, description]) => description);
@@ -139,20 +157,22 @@ for (const page of pages) {
 
 	// 只要有任何一项缺失，就抛错并列出缺失内容和已加载的样式表
 	if (missingMarkup.length > 0 || missingRules.length > 0) {
+		// 已加载的样式表列表（为空时显示 "none"，便于排查）
 		const loadedStylesheets = stylesheetUrls.join(", ") || "none";
+		// 合并缺失项，并对 markup 类型加上后缀以区分
 		const missing = [
 			...missingMarkup.map((description) => `${description} markup`),
 			...missingRules,
 		];
 		throw new Error(
 			`${page.name} is missing: ${missing.join(", ")}. ` +
-				`Loaded stylesheets: ${loadedStylesheets}`,
+			`Loaded stylesheets: ${loadedStylesheets}`,
 		);
 	}
 
 	// 全部通过，打印成功信息
 	console.log(
 		`Verified ${page.name.toLowerCase()} styles across ` +
-			`${stylesheetUrls.length} linked stylesheet(s).`,
+		`${stylesheetUrls.length} linked stylesheet(s).`,
 	);
 }

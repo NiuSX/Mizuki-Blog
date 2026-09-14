@@ -1,16 +1,39 @@
 ---
+// 导入照片卡片属性类型
 import type { PhotoCardProps } from "./types";
 
+// 解构 props：src（图片地址）、alt（替代文本，默认空）、albumId（所属相册 id）
+// 用 as 标注类型
 const { src, alt = "", albumId } = Astro.props as PhotoCardProps;
 ---
 
+<!--
+  照片卡片外层：
+  - break-inside-avoid: 瀑布流布局中避免图片被分栏截断
+  - mb-3: 底部间距，形成瀑布流的纵向间隔
+-->
 <div class="gallery-photo-card break-inside-avoid mb-3">
+	<!--
+	  可点击区域：
+	  - data-fancybox: 用相册 id 分组，同组照片共享灯箱浏览
+	  - data-src: 灯箱打开时加载的原图地址
+	  - data-type="image": 告诉 fancybox 这是图片类型
+	  - group + group-hover: 父悬停子响应的缩放效果
+	-->
 	<div
 		data-fancybox={`gallery-${albumId}`}
 		data-src={src}
 		data-type="image"
 		class="block rounded-xl overflow-hidden group cursor-pointer"
 	>
+		<!--
+		  缩略图：
+		  - w-full h-auto: 按原始宽高比自适应（瀑布流关键，不裁剪）
+		  - object-cover: 若设置了固定尺寸，按裁剪填充
+		  - loading="lazy": 延迟加载，首屏外图片不阻塞
+		  - decoding="async": 异步解码，减少主线程阻塞
+		  - group-hover:scale-105: 悬停时轻微放大
+		-->
 		<img
 			src={src}
 			alt={alt}

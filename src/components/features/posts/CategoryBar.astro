@@ -1,17 +1,33 @@
 ---
+// 导入 i18n 相关
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
+// 导入 astro-icon 的 Icon 组件
 import { Icon } from "astro-icon/components";
 
+// 导入内容工具：获取分类列表、获取排序后的文章列表
 import { getCategoryList, getSortedPostsList } from "@/utils/content-utils";
+// 导入 URL 工具：分类 URL、通用 URL（处理 base 前缀）
 import { getCategoryUrl, url } from "@/utils/url-utils";
 
+// ===== 服务端数据获取 =====
+/** 所有分类（含名称与文章数） */
 const categories = await getCategoryList();
+/** 文章总数（用于归档按钮显示） */
 const totalPosts = (await getSortedPostsList()).length;
+/** 首页路径（经 url 处理，支持子目录部署） */
 const homeUrl = url("/");
+/** 归档页路径 */
 const archiveUrl = url("/archive/");
 ---
 
+<!--
+  分类导航栏：
+  - id="category-bar" 供客户端脚本定位
+  - data-home-path / data-archive-path 把路径传给客户端脚本，
+    避免客户端硬编码路径（支持子目录部署）
+  - onload-animation 类触发入场动画（外部样式定义）
+-->
 <div
 	class="card-base category-bar p-3 onload-animation"
 	id="category-bar"
@@ -19,6 +35,7 @@ const archiveUrl = url("/archive/");
 	data-archive-path={archiveUrl}
 >
 	<div class="category-bar-inner flex gap-2">
+		<!-- ===== 首页按钮（图标） ===== -->
 		<a
 			href={homeUrl}
 			class="category-pill text-sm px-2 py-1 rounded-lg shrink-0
@@ -28,6 +45,7 @@ const archiveUrl = url("/archive/");
 		>
 			<Icon name="material-symbols:home" class="text-lg" />
 		</a>
+		<!-- ===== 归档按钮（文字 + 文章总数） ===== -->
 		<a
 			href={archiveUrl}
 			class="category-pill text-sm px-3 py-1 rounded-lg whitespace-nowrap shrink-0
@@ -37,92 +55,112 @@ const archiveUrl = url("/archive/");
 			{i18n(I18nKey.archive)}
 			<span class="text-xs opacity-60 ml-1">{totalPosts}</span>
 		</a>
+		<!-- 分隔线：区分"固定按钮"与"分类列表" -->
 		<div class="category-divider shrink-0"></div>
+		<!-- ===== 分类横向滚动区 ===== -->
 		<div class="scroll-area relative">
+			<!-- 左侧淡出提示：表示左侧还有内容可滚动 -->
 			<div class="scroll-fade scroll-fade-left" aria-hidden="true"></div>
+			<!-- 可横向滚动的分类列表 -->
 			<div class="category-scroll flex gap-2 overflow-x-auto">
 				{
+					// 遍历所有分类，渲染为胶囊按钮
 					categories.map((cat) => (
-						<a
-							href={getCategoryUrl(cat.name)}
-							class="category-pill text-sm px-3 py-1 rounded-lg whitespace-nowrap
+					<a
+						href={getCategoryUrl(cat.name)}
+						class="category-pill text-sm px-3 py-1 rounded-lg whitespace-nowrap
 								   transition-colors duration-200 flex items-center justify-center"
-							data-category-name={cat.name}
-						>
-							{cat.name}
-							<span class="text-xs opacity-60 ml-1">
+						data-category-name={cat.name}
+					>
+						{cat.name}
+						<span class="text-xs opacity-60 ml-1">
 								{cat.count}
 							</span>
-						</a>
-					))
+					</a>
+				))
 				}
 			</div>
+			<!-- 右侧淡出提示：表示右侧还有内容可滚动 -->
 			<div class="scroll-fade scroll-fade-right" aria-hidden="true"></div>
 		</div>
 	</div>
 </div>
 
 <style>
+	/* 分类栏整体底部间距 */
 	.category-bar {
 		margin-bottom: 1rem;
 	}
+	/* 分隔线：1px 竖线，高度撑满容器 */
 	.category-divider {
 		width: 1px;
 		align-self: stretch;
 		background: var(--line-divider);
 	}
+	/* 滚动区容器：占据剩余空间，建立定位上下文 */
 	.scroll-area {
 		flex: 1;
-		min-width: 0;
+		min-width: 0;  /* flex 子项允许收缩（否则 overflow 不生效） */
 		position: relative;
 	}
+	/* 左右淡出遮罩：绝对定位覆盖在滚动区两端 */
 	.scroll-fade {
 		position: absolute;
 		top: 0;
 		bottom: 0;
 		width: 2.5rem;
+		/* 不拦截鼠标事件（否则会挡住下方分类按钮的点击） */
 		pointer-events: none;
 		opacity: 0;
 		transition: opacity 300ms ease-in-out;
 		z-index: 1;
 	}
+	/* 由脚本添加 data-visible 时才显示（有内容可滚动时） */
 	.scroll-fade[data-visible] {
 		opacity: 1;
 	}
+	/* 左侧淡出：从左到右由透明变卡片背景色 */
 	.scroll-fade-left {
 		left: 0;
 		background: linear-gradient(to left, transparent, var(--card-bg));
 	}
+	/* 右侧淡出：从右到左由透明变卡片背景色 */
 	.scroll-fade-right {
 		right: 0;
 		background: linear-gradient(to right, transparent, var(--card-bg));
 	}
+	/* 透明壁纸模式下隐藏淡出遮罩（壁纸背景下遮罩会显得突兀） */
 	:global(body.wallpaper-transparent) .scroll-fade {
 		display: none;
 	}
+	/* 滚动容器：隐藏滚动条，保留平滑滚动 */
 	.category-scroll {
-		scrollbar-width: none;
-		-ms-overflow-style: none;
+		scrollbar-width: none;     /* Firefox */
+		-ms-overflow-style: none;  /* IE/Edge */
 		scroll-behavior: smooth;
 	}
 	.category-scroll::-webkit-scrollbar {
-		display: none;
+		display: none;  /* WebKit（Chrome/Safari） */
 	}
+	/* 分类胶囊基础样式：描边式（透明背景） */
 	.category-pill {
 		border: 1.5px solid var(--line-divider);
 		color: var(--btn-content);
 		background: transparent;
 	}
+	/* 悬停：边框与文字变主色 */
 	.category-pill:hover {
 		border-color: var(--primary);
 		color: var(--primary);
 		background: transparent;
 	}
+	/* 激活态（由脚本添加 data-active）：主色填充 */
 	.category-pill[data-active] {
 		background: var(--primary);
 		border-color: var(--primary);
 		color: white;
 	}
+	/* 激活态悬停：略微降低透明度形成反馈 */
 	.category-pill[data-active]:hover {
 		background: var(--primary);
 		border-color: var(--primary);
@@ -131,21 +169,30 @@ const archiveUrl = url("/archive/");
 </style>
 
 <script>
+	/**
+	 * 更新分类栏状态：
+	 * 1. 根据当前路径决定是否显示分类栏
+	 * 2. 高亮当前分类
+	 * 3. 自动滚动到高亮项
+	 * 4. 归档页显示分类名作为横幅标题
+	 */
 	function updateCategoryBar() {
 		const bar = document.getElementById("category-bar");
 		if (!bar) {
 			return;
 		}
 
+		// ===== 路径规范化（去掉末尾斜杠）=====
 		const pathname = window.location.pathname.replace(/\/$/, "");
 		const homePath = (bar.getAttribute("data-home-path") || "/").replace(
-			/\/$/,
-			"",
+			/\/$/, "",
 		);
 		// 归档页路径也需要标准化，避免 /archive 与 /archive/ 不一致导致无法匹配
 		const archivePath = (
 			bar.getAttribute("data-archive-path") || "/archive"
 		).replace(/\/$/, "");
+
+		// ===== 判断当前页面类型 =====
 		const isHome =
 			pathname === homePath || pathname === "" || pathname === "/";
 		const isArchive = pathname === archivePath;
@@ -155,8 +202,8 @@ const archiveUrl = url("/archive/");
 			(homePath !== "" &&
 				new RegExp(
 					"^" +
-						homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") +
-						"\\/\\d+$",
+					homePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") +
+					"\\/\\d+$",
 				).test(pathname));
 
 		// 在首页、首页分页和归档页显示
@@ -166,20 +213,23 @@ const archiveUrl = url("/archive/");
 		}
 		bar.style.display = "";
 
-		// 高亮当前分类
+		// ===== 高亮当前分类 =====
 		const pills = bar.querySelectorAll<HTMLAnchorElement>(".category-pill");
 		const params = new URLSearchParams(window.location.search);
 		const activeCategory = params.get("category") || "";
 		const hasTag = params.has("tag");
 		const hasUncategorized = params.has("uncategorized");
 
+		// 先清除所有激活态
 		pills.forEach((pill) => pill.removeAttribute("data-active"));
 
 		if (isHome || isHomePagination) {
+			// 首页/首页分页 → 高亮"首页"按钮（data-category-name 为空字符串）
 			bar.querySelector<HTMLAnchorElement>(
 				'.category-pill[data-category-name=""]',
 			)?.setAttribute("data-active", "");
 		} else if (activeCategory) {
+			// 归档页 + 有 category 参数 → 高亮对应分类
 			pills.forEach((pill) => {
 				if (
 					pill.getAttribute("data-category-name") === activeCategory
@@ -188,17 +238,19 @@ const archiveUrl = url("/archive/");
 				}
 			});
 		} else if (isArchive && !hasTag && !hasUncategorized) {
+			// 归档页 + 无其它筛选 → 高亮"归档"按钮
 			bar.querySelector<HTMLAnchorElement>(
 				'.category-pill[data-category-name="__archive__"]',
 			)?.setAttribute("data-active", "");
 		}
 
-		// 自动滚动到当前高亮的分类
+		// ===== 自动滚动到高亮的分类 =====
 		const activePill = bar.querySelector<HTMLAnchorElement>(
 			".category-pill[data-active]",
 		);
 		const scroll = bar.querySelector<HTMLElement>(".category-scroll");
 		if (activePill && scroll) {
+			// 计算让 activePill 居中所需的 scrollLeft
 			const scrollLeft =
 				activePill.offsetLeft -
 				scroll.offsetLeft -
@@ -209,7 +261,8 @@ const archiveUrl = url("/archive/");
 			});
 		}
 
-		// 更新横幅标题：归档页有分类筛选时显示分类名
+		// ===== 更新横幅标题 =====
+		// 归档页有分类筛选时，把横幅标题改为分类名
 		if (isArchive && activeCategory) {
 			const bannerTitle = document.querySelector(
 				".banner-page-title-text",
@@ -220,6 +273,11 @@ const archiveUrl = url("/archive/");
 		}
 	}
 
+	/**
+	 * 初始化滚动相关特性：
+	 * 1. 鼠标滚轮横向滚动
+	 * 2. 左右淡出提示的显隐
+	 */
 	function initScrollFeatures() {
 		const bar = document.getElementById("category-bar");
 		if (!bar) {
@@ -231,25 +289,35 @@ const archiveUrl = url("/archive/");
 			return;
 		}
 
-		// 鼠标滚轮横向滚动
+		// 鼠标滚轮横向滚动（把竖向滚轮转为横向滚动）
 		scroll.addEventListener(
 			"wheel",
 			(e) => {
+				// 无溢出（内容未超出）时不拦截
 				if (scroll.scrollWidth <= scroll.clientWidth) {
 					return;
 				}
+				// 阻止默认竖向滚动
 				e.preventDefault();
+				// 把竖向滚动量转给横向
 				scroll.scrollLeft += e.deltaY;
 			},
+			// passive: false 才能调用 preventDefault
 			{ passive: false },
 		);
 
-		// 监听滚动更新提示图标
+		// 监听滚动与窗口变化，更新淡出提示
 		scroll.addEventListener("scroll", updateScrollHint);
 		window.addEventListener("resize", updateScrollHint);
 		updateScrollHint();
 	}
 
+	/**
+	 * 更新左右淡出遮罩的显示状态
+	 * 规则：
+	 *  - 有溢出且不在最左 → 显示左遮罩
+	 *  - 有溢出且不在最右 → 显示右遮罩
+	 */
 	function updateScrollHint() {
 		const bar = document.getElementById("category-bar");
 		if (!bar) {
@@ -262,17 +330,20 @@ const archiveUrl = url("/archive/");
 			return;
 		}
 
+		// +1/-1 是容差，避免因亚像素误差导致边界判断错误
 		const hasOverflow = scroll.scrollWidth > scroll.clientWidth + 1;
 		const atStart = scroll.scrollLeft <= 1;
 		const atEnd =
 			scroll.scrollLeft + scroll.clientWidth >= scroll.scrollWidth - 1;
 
+		// 左遮罩：有溢出且不在最左
 		if (hasOverflow && !atStart) {
 			fadeLeft.setAttribute("data-visible", "");
 		} else {
 			fadeLeft.removeAttribute("data-visible");
 		}
 
+		// 右遮罩：有溢出且不在最右
 		if (hasOverflow && !atEnd) {
 			fadeRight.setAttribute("data-visible", "");
 		} else {
@@ -280,11 +351,14 @@ const archiveUrl = url("/archive/");
 		}
 	}
 
+	// ===== 初始化与页面切换适配 =====
 	updateCategoryBar();
 	initScrollFeatures();
+	// Astro View Transitions：页面加载后重新初始化
 	document.addEventListener("astro:page-load", () => {
 		updateCategoryBar();
 		initScrollFeatures();
 	});
+	// Swup：内容替换后仅更新状态（滚动监听器已在 init 时绑定，无需重复）
 	document.addEventListener("swup:contentReplaced", updateCategoryBar);
 </script>

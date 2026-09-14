@@ -1,23 +1,43 @@
 ---
+// 导入 astro-icon 的 Icon 组件
 import { Icon } from "astro-icon/components";
 
+// 导入 i18n 相关
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
+// 导入分类 URL 生成工具（处理 base 前缀等）
 import { getCategoryUrl } from "@/utils/url-utils";
 
+/**
+ * 组件属性定义
+ */
 interface Props {
+	/** 分类名（可选，缺省时显示"未分类"） */
 	category?: string;
+	/** 外部传入的额外类名 */
 	class?: string;
 }
 
+// 解构 props
+// 注意：class 重命名为 className，但未设默认值（可能为 undefined）
 const { category, class: className } = Astro.props;
 ---
 
+<!-- 容器：横向排列，图标 + 分类链接，应用外部类名 -->
 <div class:list={["flex items-center", className]}>
+	<!-- 图标：书本图标（表示"分类"） -->
 	<div class="meta-icon">
 		<Icon name="material-symbols:book-2-outline-rounded" class="text-xl" />
 	</div>
+	<!-- 分类链接行：不换行 -->
 	<div class="flex flex-row flex-nowrap items-center">
+		<!--
+		  分类链接：
+		  - href 由 getCategoryUrl 生成（category 缺省时空字符串）
+		  - aria-label 描述链接目标（英文，但含动态 category 值）
+		  - 文字：category 存在显示分类名，否则显示 i18n 的"未分类"
+		  - 超长不换行（whitespace-nowrap）
+		-->
 		<a
 			href={getCategoryUrl(category || "")}
 			aria-label={`View all posts in the ${category} category`}

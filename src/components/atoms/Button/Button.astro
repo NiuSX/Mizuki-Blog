@@ -1,6 +1,13 @@
 ---
+// 从同级 types 文件导入 ButtonProps 类型定义（仅类型导入，编译后擦除）
 import type { ButtonProps } from "./types";
 
+// 从 Astro.props 解构按钮属性，并提供默认值：
+// - type:      按钮原生 type（button/submit/reset），默认 "button"
+// - variant:   视觉变体（primary/secondary/ghost/outline），默认 "primary"
+// - size:      尺寸（sm/md/lg），默认 "md"
+// - disabled:  是否禁用，默认 false
+// - class:     外部传入的额外类名，通过重命名避免与保留字冲突
 const {
 	type = "button",
 	variant = "primary",
@@ -9,29 +16,43 @@ const {
 	class: className = "",
 }: ButtonProps = Astro.props;
 
+// 所有变体与尺寸共享的基础类（布局、字体、过渡、禁用态等）
 const baseClasses =
 	"inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
 
+// 视觉变体类映射：不同 variant 对应不同的背景、文字色与悬停态
 const variantClasses = {
+	// 主按钮：主色背景 + 白色文字，悬停/按下时调整透明度
 	primary: "bg-[var(--primary)] text-white hover:opacity-90 active:opacity-80",
+	// 次要按钮：浅色背景，悬停/按下时背景加深
 	secondary:
 		"bg-[var(--btn-plain-bg-hover)] text-[var(--btn-content)] hover:bg-[var(--btn-plain-bg-active)]",
+	// 幽灵按钮：透明背景，仅悬停时显示背景色
 	ghost:
 		"bg-transparent hover:bg-[var(--btn-plain-bg-hover)] text-[var(--btn-content)]",
+	// 描边按钮：带边框，悬停时填充背景
 	outline:
 		"border border-[var(--line-divider)] bg-transparent hover:bg-[var(--btn-plain-bg-hover)] text-[var(--btn-content)]",
 };
 
+// 尺寸类映射：控制高度、水平内边距与字号
 const sizeClasses = {
-	sm: "h-8 px-3 text-sm",
-	md: "h-10 px-4 text-base",
-	lg: "h-12 px-6 text-lg",
+	sm: "h-8 px-3 text-sm",  // 小号：32px 高
+	md: "h-10 px-4 text-base", // 中号：40px 高
+	lg: "h-12 px-6 text-lg",  // 大号：48px 高
 };
 
+// 合并所有类名：基础 + 变体 + 尺寸 + 外部传入
+// 用 trim() 去掉多余空格，避免生成空类名
 const combinedClass =
 	`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`.trim();
 ---
 
+<!-- 渲染原生 button 元素：
+     - type: 直接透传给原生属性
+     - class: 使用合并后的完整类名
+     - disabled: 透传禁用状态
+     - 内容通过 <slot /> 由使用方填充 -->
 <button type={type} class={combinedClass} disabled={disabled}>
 	<slot />
 </button>

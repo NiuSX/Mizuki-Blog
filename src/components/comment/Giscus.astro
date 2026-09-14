@@ -1,25 +1,45 @@
 ---
+// 从配置入口导入 commentConfig（含 giscus 子配置）
 import { commentConfig } from "@/config";
 
+/**
+ * 组件属性定义
+ */
 interface Props {
+	/** 当前页面路径，作为 giscus 评论区的唯一标识（term） */
 	path: string;
 }
 
+// 合并配置：展开 giscus 基础配置，并用当前路径覆盖 term
+// term 用于按页面区分评论区（同一页面共享评论）
 const config = {
 	...commentConfig.giscus,
 	term: Astro.props.path,
 };
 ---
 
+<!-- giscus 挂载容器：评论脚本加载后会在此渲染 iframe -->
 <div id="giscus-container" class="giscus-container"></div>
 
+<!--
+  is:inline  —— 不打包，直接内联到 HTML
+  define:vars —— 把服务端配置注入到脚本作用域
+-->
 <script is:inline define:vars={{ config }}>
 	(function () {
+		// giscus 容器 id
 		const GISCUS_CONTAINER_ID = "giscus-container";
+		// IntersectionObserver 的提前量：距离视口 200px 时就开始加载
 		const ROOT_MARGIN = "200px";
 
+		// 懒加载观察器实例（用于销毁）
 		let observer = null;
 
+		/**
+		 * 获取规范化后的当前路径
+		 * 去掉末尾斜杠（如 "/about/" → "/about"），保证同一页面的 term 一致
+		 * @returns {string} 规范化路径
+		 */
 		function getCurrentPath() {
 			const pathname = window.location.pathname;
 			return pathname.endsWith("/") && pathname.length > 1
@@ -27,14 +47,20 @@ const config = {
 				: pathname;
 		}
 
+		/**
+		 * 初始化 giscus：动态创建并插入 giscus 官方脚本
+		 * 脚本加载后会自动在容器内渲染 iframe
+		 */
 		async function initGiscus() {
 			const container = document.getElementById(GISCUS_CONTAINER_ID);
 			if (!container) {
 				return;
 			}
 
+			// 解析主题：若配置为 preferred_color_scheme，则跟随当前站点主题
 			let theme = config.theme;
 			if (theme === "preferred_color_scheme") {
+				// 判断当前是否为暗色（兼容 .dark 类与 data-theme 属性两种方式）
 				const isDark =
 					document.documentElement.classList.contains("dark") ||
 					document.documentElement
@@ -43,15 +69,19 @@ const config = {
 				theme = isDark ? "dark" : "light";
 			}
 
+			// 清空容器，避免重复初始化时叠加多个 iframe
 			container.innerHTML = "";
 
+			// 动态创建 giscus 脚本
 			const script = document.createElement("script");
 			script.src = "https://giscus.app/client.js";
+			// 以下 data-* 属性是 giscus 约定的配置项
 			script.setAttribute("data-repo", config.repo);
 			script.setAttribute("data-repo-id", config.repoId);
 			script.setAttribute("data-category", config.category);
 			script.setAttribute("data-category-id", config.categoryId);
 			script.setAttribute("data-mapping", config.mapping);
+			// 用当前路径作为讨论标识（term）
 			script.setAttribute("data-term", getCurrentPath());
 			script.setAttribute("data-strict", config.strict);
 			script.setAttribute(
@@ -61,17 +91,25 @@ const config = {
 			script.setAttribute("data-emit-metadata", config.emitMetadata);
 			script.setAttribute("data-input-position", config.inputPosition);
 			script.setAttribute("data-theme", theme);
+			// giscus 要求语言格式为 "zh-CN"（连字符），配置里可能是 "zh_CN"（下划线）
 			script.setAttribute(
 				"data-lang",
 				config.lang ? config.lang.replace("_", "-") : "en",
 			);
 			script.setAttribute("data-loading", config.loading);
+			// 允许跨域（giscus 从 giscus.app 加载）
 			script.crossOrigin = "anonymous";
 			script.async = true;
 
 			container.appendChild(script);
 		}
 
+		/**
+		 * 清理资源：
+		 * - 断开 IntersectionObserver
+		 * - 注销 swup 钩子
+		 * 在页面卸载时调用，避免内存泄漏
+		 */
 		function cleanup() {
 			if (observer) {
 				observer.disconnect();
@@ -82,6 +120,10 @@ const config = {
 			}
 		}
 
+		/**
+		 * 设置懒加载：当容器进入视口（提前 200px）时才加载 giscus
+		 * 避免首屏就加载评论 iframe（节省带宽、提升性能）
+		 */
 		function setupLazyLoad() {
 			const container = document.getElementById(GISCUS_CONTAINER_ID);
 			if (!container) {
@@ -91,23 +133,32 @@ const config = {
 			observer = new IntersectionObserver(
 				(entries) => {
 					if (entries[0].isIntersecting) {
+						// 进入视口后立即断开观察器（只需触发一次）
 						observer.disconnect();
 						observer = null;
 						initGiscus();
 					}
 				},
+				// rootMargin 提前 200px 触发，减少用户等待
 				{ rootMargin: ROOT_MARGIN },
 			);
 
 			observer.observe(container);
 		}
 
+		/**
+		 * 注册 swup 钩子：页面切换后重新设置懒加载
+		 * swup 是页面过渡库，内容替换后旧容器被移除、新容器被插入
+		 */
 		function setupSwupHooks() {
 			if (window.swup?.hooks) {
+				// swup 已就绪：直接注册
 				window.swup.hooks.on("content:replace", () => {
+					// 延迟 200ms 等待新 DOM 就绪
 					setTimeout(setupLazyLoad, 200);
 				});
 			} else {
+				// swup 尚未初始化：监听 swup:enable 事件后再注册
 				document.addEventListener(
 					"swup:enable",
 					() => {
@@ -117,33 +168,42 @@ const config = {
 							});
 						}
 					},
-					{ once: true },
+					{ once: true }, // 只监听一次
 				);
 			}
 		}
 
+		// 监听自定义事件：页面加载完成时设置懒加载
 		document.addEventListener("mizuki:page:loaded", () => {
 			setupLazyLoad();
 		});
 
+		// 页面卸载前清理资源
 		window.addEventListener("beforeunload", cleanup);
 
+		// 根据文档加载状态决定初始化时机
 		if (document.readyState === "loading") {
+			// 文档仍在加载：等 DOMContentLoaded
 			document.addEventListener("DOMContentLoaded", () => {
 				setupLazyLoad();
 				setupSwupHooks();
 			});
 		} else {
+			// 文档已加载完成：立即执行
 			setupLazyLoad();
 			setupSwupHooks();
 		}
 
+		// ===== 主题同步：监听 <html> 的 class / data-theme 变化 =====
+		// giscus 是 iframe，无法直接受父页面 CSS 影响，
+		// 需通过 postMessage 通知 iframe 切换主题
 		const observer_theme = new MutationObserver((mutations) => {
 			mutations.forEach((mutation) => {
 				if (
 					mutation.attributeName === "class" ||
 					mutation.attributeName === "data-theme"
 				) {
+					// 判断当前是否为暗色
 					const isDark =
 						document.documentElement.classList.contains("dark") ||
 						document.documentElement
@@ -151,10 +211,13 @@ const config = {
 							?.includes("dark");
 					const theme = isDark ? "dark" : "light";
 
+					// 找到 giscus 渲染出的 iframe
 					const iframe = document.querySelector(
 						"iframe.giscus-frame",
 					);
 					if (iframe) {
+						// 通过 postMessage 通知 giscus 切换主题
+						// 第二个参数限定目标源为 https://giscus.app（安全要求）
 						iframe.contentWindow?.postMessage(
 							{ giscus: { setConfig: { theme } } },
 							"https://giscus.app",
@@ -164,12 +227,14 @@ const config = {
 			});
 		});
 
+		// 监听 <html> 的属性变化
 		observer_theme.observe(document.documentElement, { attributes: true });
 	})();
 </script>
 
 <style>
-	.giscus-container {
-		min-height: 200px;
+/* 容器最小高度：避免加载前评论区塌陷导致布局抖动 */
+.giscus-container {
+	min-height: 200px;
 	}
 </style>

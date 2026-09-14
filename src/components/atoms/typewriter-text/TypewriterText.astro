@@ -1,12 +1,22 @@
 ---
+/**
+	* 打字机效果组件属性定义
+	*/
 export interface Props {
+	/** 待显示的文本，单个字符串或字符串数组（多条循环播放） */
 	text: string | string[];
+	/** 打字速度（每个字符间隔毫秒），默认 100 */
 	speed?: number;
+	/** 删除速度（每个字符间隔毫秒），默认 50（比打字快） */
 	deleteSpeed?: number;
+	/** 打完一条后暂停多久再删除（毫秒），默认 2000 */
 	pauseTime?: number;
+	/** 外部传入的额外类名 */
 	class?: string;
 }
 
+// 解构 props 并设置默认值
+// class 重命名为 className，避免与保留字冲突
 const {
 	text,
 	speed = 100,
@@ -14,9 +24,18 @@ const {
 	pauseTime = 2000,
 	class: className = "",
 } = Astro.props;
+
+// 将 text 序列化为字符串，通过 data-text 传给客户端脚本：
+// - 数组：JSON.stringify 后形如 '["a","b"]'
+// - 字符串：直接使用
 const textData = Array.isArray(text) ? JSON.stringify(text) : text;
 ---
 
+<!--
+  容器元素：
+  - class 含 typewriter，供客户端脚本用 .typewriter 选择器定位
+  - data-* 属性携带全部配置，脚本从中读取
+-->
 <span
 	class={`typewriter ${className}`}
 	data-text={textData}
@@ -25,29 +44,46 @@ const textData = Array.isArray(text) ? JSON.stringify(text) : text;
 	data-pause-time={pauseTime}></span>
 
 <script>
+	/**
+	 * 打字机效果类
+	 * 负责单个 .typewriter 元素的打字/删除循环动画
+	 */
 	class TypewriterEffect {
+		/** 目标 DOM 元素 */
 		private element: HTMLElement;
+		/** 待播放的所有文本 */
 		private texts: string[];
+		/** 当前播放到第几条文本 */
 		private currentTextIndex = 0;
+		/** 打字速度（ms/字符） */
 		private speed: number;
+		/** 删除速度（ms/字符） */
 		private deleteSpeed: number;
+		/** 打完后的暂停时长（ms） */
 		private pauseTime: number;
+		/** 当前文本已显示到第几个字符 */
 		private currentIndex = 0;
+		/** 当前是否处于"删除"阶段 */
 		private isDeleting = false;
+		/** setTimeout 的 ID，用于销毁时清理 */
 		private timeoutId: number | null = null;
 
 		constructor(element: HTMLElement) {
 			this.element = element;
+			// 从 data-text 读取原始文本数据
 			const textData = element.dataset.text || "";
 
 			// 尝试解析为 JSON 数组，如果失败则作为单个字符串处理
 			try {
 				const parsed = JSON.parse(textData);
+				// 解析成功且为数组 → 使用数组；否则视为单条字符串
 				this.texts = Array.isArray(parsed) ? parsed : [textData];
 			} catch {
+				// 普通字符串（非 JSON 格式）→ 作为单条文本
 				this.texts = [textData];
 			}
 
+			// 从 data-* 读取各项速度配置
 			this.speed = parseInt(element.dataset.speed || "100");
 			this.deleteSpeed = parseInt(element.dataset.deleteSpeed || "50");
 			this.pauseTime = parseInt(element.dataset.pauseTime || "2000");
@@ -60,8 +96,12 @@ const textData = Array.isArray(text) ? JSON.stringify(text) : text;
 			}
 		}
 
+		/**
+		 * 判断是否启用了打字机效果
+		 * 逻辑：只要元素上存在任一打字机相关 data 属性，就视为启用
+		 * @returns {boolean} 是否启用
+		 */
 		private isTypewriterEnabled(): boolean {
-			// 检查是否有打字机相关的数据属性
 			return (
 				this.element.dataset.speed !== undefined ||
 				this.element.dataset.deleteSpeed !== undefined ||
@@ -69,11 +109,16 @@ const textData = Array.isArray(text) ? JSON.stringify(text) : text;
 			);
 		}
 
+		/**
+		 * 从多条文本中随机选一条直接显示（不播放动画）
+		 * 用于"多文本但未启用打字机"的场景
+		 */
 		private showRandomText() {
 			const randomIndex = Math.floor(Math.random() * this.texts.length);
 			this.element.textContent = this.texts[randomIndex];
 		}
 
+		/** 启动打字循环；无文本时直接返回 */
 		private start() {
 			if (this.texts.length === 0) {
 				return;
@@ -81,16 +126,22 @@ const textData = Array.isArray(text) ? JSON.stringify(text) : text;
 			this.type();
 		}
 
+		/** 获取当前正在播放的文本 */
 		private getCurrentText(): string {
 			return this.texts[this.currentTextIndex] || "";
 		}
 
+		/**
+		 * 核心递归函数：根据当前状态执行"打字"或"删除"
+		 * 通过 setTimeout 递归调用自身，形成持续动画
+		 */
 		private type() {
 			const currentText = this.getCurrentText();
 
 			if (this.isDeleting) {
-				// 删除字符
+				// ===== 删除阶段 =====
 				if (this.currentIndex > 0) {
+					// 还有字符可删：减少一个字符并继续
 					this.currentIndex--;
 					this.element.textContent = currentText.substring(
 						0,
@@ -101,7 +152,7 @@ const textData = Array.isArray(text) ? JSON.stringify(text) : text;
 						this.deleteSpeed,
 					);
 				} else {
-					// 删除完成，切换到下一条文本
+					// 删除完成，切换到下一条文本（循环）
 					this.isDeleting = false;
 					this.currentTextIndex =
 						(this.currentTextIndex + 1) % this.texts.length;
@@ -111,8 +162,9 @@ const textData = Array.isArray(text) ? JSON.stringify(text) : text;
 					);
 				}
 			} else {
-				// 添加字符
+				// ===== 打字阶段 =====
 				if (this.currentIndex < currentText.length) {
+					// 还有字符可打：增加一个字符并继续
 					this.currentIndex++;
 					this.element.textContent = currentText.substring(
 						0,
@@ -123,15 +175,17 @@ const textData = Array.isArray(text) ? JSON.stringify(text) : text;
 						this.speed,
 					);
 				} else {
-					// 打字完成，暂停后开始删除（如果有多条文本）
+					// 打字完成
 					if (this.texts.length > 1) {
+						// 多条文本：暂停后进入删除阶段
 						this.isDeleting = true;
 						this.timeoutId = window.setTimeout(
 							() => this.type(),
 							this.pauseTime,
 						);
 					} else {
-						// 如果只有一条文本，保持显示不删除，但确保元素有内容
+						// 单条文本：保持显示不删除
+						// 若该文本为空字符串，用不间断空格占位以保持布局
 						if (this.texts.length === 1 && this.texts[0] === "") {
 							this.element.innerHTML = "&nbsp;"; // 使用不间断空格保持布局
 						}
@@ -140,6 +194,7 @@ const textData = Array.isArray(text) ? JSON.stringify(text) : text;
 			}
 		}
 
+		/** 销毁：清除挂起的定时器，避免内存泄漏 */
 		public destroy() {
 			if (this.timeoutId) {
 				clearTimeout(this.timeoutId);
@@ -147,7 +202,7 @@ const textData = Array.isArray(text) ? JSON.stringify(text) : text;
 		}
 	}
 
-	// 初始化所有打字机效果
+	// ===== 初始化：首次页面加载完成后，为所有 .typewriter 元素创建实例 =====
 	document.addEventListener("DOMContentLoaded", () => {
 		const typewriterElements = document.querySelectorAll(".typewriter");
 		typewriterElements.forEach((element) => {
@@ -155,7 +210,9 @@ const textData = Array.isArray(text) ? JSON.stringify(text) : text;
 		});
 	});
 
-	// 支持页面切换时重新初始化
+	// ===== 支持页面切换时重新初始化 =====
+	// swup 是页面过渡库，内容被替换后会触发此事件，
+	// 需要为新插入的 .typewriter 元素重新创建实例
 	document.addEventListener("swup:contentReplaced", () => {
 		const typewriterElements = document.querySelectorAll(".typewriter");
 		typewriterElements.forEach((element) => {
@@ -165,16 +222,19 @@ const textData = Array.isArray(text) ? JSON.stringify(text) : text;
 </script>
 
 <style>
-	.typewriter {
-		position: relative;
-		min-height: 1.5em; /* 确保即使没有文字也保持最小高度 */
-		display: inline-block;
-		vertical-align: baseline;
+/* 容器基础样式 */
+.typewriter {
+	position: relative;
+	/* 确保即使没有文字也保持最小高度（防止布局抖动） */
+	min-height: 1.5em;
+	display: inline-block;
+	vertical-align: baseline;
 	}
 
-	/* 确保打字机效果不会导致布局抖动 */
-	.typewriter:empty::before {
-		content: "\00A0"; /* 使用不间断空格保持高度 */
-		visibility: hidden;
+/* 确保打字机效果不会导致布局抖动 */
+/* :empty 匹配无子节点的元素；::before 插入不可见的不间断空格撑高 */
+.typewriter:empty::before {
+	content: "\00A0"; /* 使用不间断空格保持高度 */
+	visibility: hidden;
 	}
 </style>

@@ -9,78 +9,138 @@
 ---
 
 <script>
-	const GROUP = ".rehype-code-group";
-	const TAB = ".rcg-tab";
-	const BLOCK = ".rcg-block";
+    // ===== 选择器常量（集中定义便于维护）=====
+    /** 代码组容器 */
+    const GROUP = ".rehype-code-group";
+    /** 标签按钮 */
+    const TAB = ".rcg-tab";
+    /** 代码块面板 */
+    const BLOCK = ".rcg-block";
 
-	function tabs(group: Element): HTMLElement[] {
-		return Array.from(
-			group.querySelectorAll<HTMLElement>(
-				`:scope > .rcg-tab-container > ${TAB}`,
-			),
-		);
-	}
+    /**
+     * 获取某个代码组内的所有标签按钮
+     * 说明：使用 `:scope >` 限定为**直接子元素**，
+     * 避免嵌套代码组时误选到内层组的标签。
+     * @param {Element} group 代码组容器
+     * @returns {HTMLElement[]} 标签按钮数组
+     */
+    function tabs(group: Element): HTMLElement[] {
+        return Array.from(
+            group.querySelectorAll<HTMLElement>(
+                `:scope > .rcg-tab-container > ${TAB}`,
+            ),
+        );
+    }
 
-	function blocks(group: Element): HTMLElement[] {
-		return Array.from(group.querySelectorAll<HTMLElement>(`:scope > ${BLOCK}`));
-	}
+    /**
+     * 获取某个代码组内的所有代码块面板
+     * 同样用 `:scope >` 限定直接子元素。
+     * @param {Element} group 代码组容器
+     * @returns {HTMLElement[]} 代码块数组
+     */
+    function blocks(group: Element): HTMLElement[] {
+        return Array.from(group.querySelectorAll<HTMLElement>(`:scope > ${BLOCK}`));
+    }
 
-	function activate(group: Element, index: number, focus = false) {
-		const allTabs = tabs(group);
-		const allBlocks = blocks(group);
-		if (allTabs.length === 0) return;
-		const target = Math.max(0, Math.min(index, allTabs.length - 1));
-		allTabs.forEach((tab, current) => {
-			const selected = current === target;
-			tab.classList.toggle("active", selected);
-			tab.setAttribute("aria-selected", String(selected));
-			tab.tabIndex = selected ? 0 : -1;
-		});
-		allBlocks.forEach((block, current) => {
-			const selected = current === target;
-			block.classList.toggle("active", selected);
-			block.toggleAttribute("hidden", !selected);
-		});
-		if (focus) allTabs[target]?.focus({ preventScroll: true });
-	}
+    /**
+     * 激活指定索引的标签与对应代码块
+     * @param {Element} group 代码组容器
+     * @param {number} index 目标索引（会被钳制到合法范围）
+     * @param {boolean} [focus=false] 是否将焦点移到目标标签（键盘操作时需要）
+     */
+    function activate(group: Element, index: number, focus = false) {
+        const allTabs = tabs(group);
+        const allBlocks = blocks(group);
+        // 无标签则无需处理
+        if (allTabs.length === 0) return;
+        // 钳制索引到 [0, allTabs.length - 1]，防止越界
+        const target = Math.max(0, Math.min(index, allTabs.length - 1));
 
-	function resolve(target: EventTarget | null) {
-		if (!(target instanceof Element)) return null;
-		const tab = target.closest<HTMLElement>(TAB);
-		const group = tab?.closest(GROUP);
-		if (!tab || !group) return null;
-		const index = tabs(group).indexOf(tab);
-		return index < 0 ? null : { group, index };
-	}
+        // ===== 更新标签状态 =====
+        allTabs.forEach((tab, current) => {
+            const selected = current === target;
+            // 切换 active 类（视觉选中态）
+            tab.classList.toggle("active", selected);
+            // 更新 ARIA 选中态（无障碍）
+            tab.setAttribute("aria-selected", String(selected));
+            // 仅选中项可 Tab 聚焦（WAI-ARIA tabs 模式：roving tabindex）
+            tab.tabIndex = selected ? 0 : -1;
+        });
 
-	document.addEventListener("click", (event) => {
-		const found = resolve(event.target);
-		if (found) activate(found.group, found.index);
-	});
+        // ===== 更新代码块状态 =====
+        allBlocks.forEach((block, current) => {
+            const selected = current === target;
+            block.classList.toggle("active", selected);
+            // 未选中的用 hidden 属性完全隐藏
+            block.toggleAttribute("hidden", !selected);
+        });
 
-	document.addEventListener("keydown", (event) => {
-		if (event.altKey || event.ctrlKey || event.metaKey) return;
-		const found = resolve(event.target);
-		if (!found) return;
-		const count = tabs(found.group).length;
-		let next: number;
-		switch (event.key) {
-			case "ArrowRight":
-				next = (found.index + 1) % count;
-				break;
-			case "ArrowLeft":
-				next = (found.index - 1 + count) % count;
-				break;
-			case "Home":
-				next = 0;
-				break;
-			case "End":
-				next = count - 1;
-				break;
-			default:
-				return;
-		}
-		event.preventDefault();
-		activate(found.group, next, true);
-	});
+        // 键盘操作时把焦点移到目标标签
+        if (focus) allTabs[target]?.focus({ preventScroll: true });
+    }
+
+    /**
+     * 从事件目标解析出「所属代码组 + 标签索引」
+     * @param {EventTarget | null} target 事件目标
+     * @returns {{group: Element, index: number} | null} 解析结果，无效时返回 null
+     */
+    function resolve(target: EventTarget | null) {
+        // 只处理 Element 类型的目标（排除文本节点等）
+        if (!(target instanceof Element)) return null;
+        // 向上查找最近的标签按钮
+        const tab = target.closest<HTMLElement>(TAB);
+        // 再向上查找所属代码组
+        const group = tab?.closest(GROUP);
+        if (!tab || !group) return null;
+        // 计算标签在组内的索引
+        const index = tabs(group).indexOf(tab);
+        return index < 0 ? null : { group, index };
+    }
+
+    // ===== 事件委托：点击 =====
+    // 使用委托而非逐个绑定，好处：
+    // 1. Swup 替换内容后无需重新绑定（新元素自动生效）
+    // 2. 内存占用更低（只注册一个监听器）
+    document.addEventListener("click", (event) => {
+        const found = resolve(event.target);
+        if (found) activate(found.group, found.index);
+    });
+
+    // ===== 事件委托：键盘导航 =====
+    // 支持 WAI-ARIA tabs 模式的键盘操作：
+    //   ArrowRight/ArrowLeft：左右切换（循环）
+    //   Home/End：跳到首/末
+    document.addEventListener("keydown", (event) => {
+        // 带修饰键时不干预（保留浏览器/系统快捷键）
+        if (event.altKey || event.ctrlKey || event.metaKey) return;
+        const found = resolve(event.target);
+        if (!found) return;
+        const count = tabs(found.group).length;
+        let next: number;
+        switch (event.key) {
+            case "ArrowRight":
+                // 右移，到末尾回绕到开头
+                next = (found.index + 1) % count;
+                break;
+            case "ArrowLeft":
+                // 左移，到开头回绕到末尾（+count 防止负数取模）
+                next = (found.index - 1 + count) % count;
+                break;
+            case "Home":
+                // 跳到第一个
+                next = 0;
+                break;
+            case "End":
+                // 跳到最后一个
+                next = count - 1;
+                break;
+            default:
+                // 其它按键不处理（避免拦截正常输入）
+                return;
+        }
+        // 阻止默认行为（如方向键滚动页面）
+        event.preventDefault();
+        // 激活新标签并聚焦（键盘操作需要）
+        activate(found.group, next, true);
+    });
 </script>

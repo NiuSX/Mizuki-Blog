@@ -1,21 +1,30 @@
 ---
 /**
- * ButtonLink - 分类列表按钮组件
- *
- * 用于分类、归档等列表项的链接按钮，支持徽章显示。
- *
- * @deprecated 这是一个特定用途的组件，保留在 control/ 目录中。
- *             新的通用按钮需求请使用 atoms/Button。
- */
+	* ButtonLink - 分类列表按钮组件
+	*
+	* 用于分类、归档等列表项的链接按钮，支持徽章显示。
+	*
+	* @deprecated 这是一个特定用途的组件，保留在 control/ 目录中。
+	*             新的通用按钮需求请使用 atoms/Button。
+	*/
 interface Props {
+	/** 角标文本（如数量），为空时不渲染 */
 	badge?: string;
+	/** 链接地址（href） */
 	url?: string;
+	/** 无障碍标签（aria-label） */
 	label?: string;
 }
+// 解构 props（无默认值，全部为可选）
 const { badge, url, label } = Astro.props;
 ---
 
+<!-- 外层链接：承载 href 与 aria-label -->
 <a href={url} aria-label={label}>
+	<!--
+	  内层按钮：纯视觉容器（未绑定事件，实际跳转由外层 <a> 完成）
+	  class:list 用模板字符串形式传入（多行 + Tailwind 任意值语法）
+	-->
 	<button
 		class:list={`
             w-full
@@ -34,12 +43,19 @@ const { badge, url, label } = Astro.props;
             dark:hover:text-(--primary)
         `}
 	>
+		<!-- 内容行：左右分布（文字在左，角标在右），相对定位 -->
 		<div class="flex items-center justify-between relative mr-2">
+			<!-- 内容区：超长文本用省略号截断 -->
 			<div
 				class="overflow-hidden text-left whitespace-nowrap text-ellipsis"
 			>
+				<!-- 插槽：由使用方填充标签文字 -->
 				<slot />
 			</div>
+			<!--
+			  角标：三重非空判断（undefined / null / 空字符串）后才渲染
+			  样式为胶囊形，亮/暗模式不同配色
+			-->
 			{
 				badge !== undefined && badge !== null && badge !== "" && (
 					<div

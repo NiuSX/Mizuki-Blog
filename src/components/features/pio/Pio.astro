@@ -1,63 +1,102 @@
 ---
+// 导入 Pio 配置类型（Live2D 看板娘配置）
 import type { PioConfig } from "@/types/config";
 
+/**
+ * 组件属性定义
+ */
 interface Props {
+	/** Live2D 看板娘配置 */
 	config: PioConfig;
 }
 
+// 解构 props
 const { config } = Astro.props;
 
+// ===== 模型路径 =====
+// 未配置时使用默认模型（NOIR）
 const modelPaths = config.models ?? ["/pio/models/NOIR/noir.model3.json"];
+// 转为 widgetConfig 需要的格式
 const modelConfigs = modelPaths.map((p) => ({ path: p }));
 
+// ===== 位置 =====
+// "right" → 右下角，其它 → 左下角
 const position = config.position === "right" ? "bottom-right" : "bottom-left";
 
+// ===== 提示语数据 =====
+// 支持两种配置写法：
+//   1. 新写法：config.tips.{welcomeMessage, messages, duration, interval}
+//   2. 旧写法：config.dialog.{welcome, touch}（会被转换成新格式）
 const tipsData: Record<string, unknown> = {};
 if (config.tips) {
+	// 新写法：直接透传
 	if (config.tips.welcomeMessage)
 		tipsData.welcomeMessage = config.tips.welcomeMessage;
 	if (config.tips.messages) tipsData.messages = config.tips.messages;
 	if (config.tips.duration) tipsData.duration = config.tips.duration;
 	if (config.tips.interval) tipsData.interval = config.tips.interval;
 } else if (config.dialog?.welcome || config.dialog?.touch) {
+	// 旧写法：dialog.welcome / dialog.touch 转换为 tips 格式
 	const welcome = config.dialog.welcome;
 	const touch = config.dialog.touch;
+	// 统一转为数组（旧配置可能是单个字符串）
 	if (welcome)
 		tipsData.welcomeMessage = Array.isArray(welcome) ? welcome : [welcome];
 	if (touch) tipsData.messages = Array.isArray(touch) ? touch : [touch];
 }
 
+// ===== 构建传给 iframe 的配置 =====
 const widgetConfig: Record<string, unknown> = {
+	// 单模型传对象，多模型传数组
 	model: modelConfigs.length === 1 ? modelConfigs[0] : modelConfigs,
 	position,
+	// 尺寸（默认 280px 宽）
 	size: config.width ?? 280,
+	// 过渡时长（毫秒）
 	transitionDuration: 1500,
+	// 过渡类型：滑动
 	transitionType: "slide",
+	// 是否隐藏"关于"菜单项（下划线前缀表示内部字段）
 	_hideAbout: config.hideAboutMenu ?? true,
 };
 
+// ===== 自定义菜单项（可选）=====
 if (config.menus?.items && config.menus.items.length > 0) {
 	widgetConfig.menus = {
+		// 只透传 icon / label / action 三个字段
 		items: config.menus.items.map(({ icon, label, action }) => ({
 			icon,
 			label,
 			action,
 		})),
+		// align 存在时才加入
 		...(config.menus.align && { align: config.menus.align }),
 	};
 }
 
+// ===== 提示语附加到模型配置 =====
+// 注意：只有单模型（model 是对象）时才附加 tips
+// 多模型时 tips 无法直接挂载（待扩展）
 if (Object.keys(tipsData).length > 0) {
 	if (!Array.isArray(widgetConfig.model)) {
 		(widgetConfig.model as Record<string, unknown>).tips = tipsData;
 	}
 }
 
+// 组件内需要的几个派生值
 const widgetWidth = config.width ?? 280;
 const hiddenOnMobile = config.hiddenOnMobile ?? true;
 const isRight = config.position === "right";
 ---
 
+<!--
+  Live2D 渲染 iframe：
+  - src 指向本地 host 页面（内部加载模型与渲染）
+  - 初始 opacity: 0（等模型加载完再淡入）
+  - pointer-events: none（初始不拦截鼠标，加载完由脚本开启）
+  - data-config 携带完整配置（JSON 序列化）
+  - data-hidden-on-mobile 控制小屏是否隐藏
+-->
 <iframe
 	id="l2d-iframe"
 	src="/pio/live2d-host.html"
@@ -73,6 +112,10 @@ const isRight = config.position === "right";
 ></iframe>
 
 <script>
+	/**
+	 * Pio 控制器接口
+	 * 挂在 window 上，供多次调用复用同一实例
+	 */
 	type PioController = {
 		update: (
 			el: HTMLIFrameElement,
@@ -81,43 +124,72 @@ const isRight = config.position === "right";
 		) => void;
 	};
 
+	// 带类型扩展的 window 对象（挂载全局控制器）
 	const win = window as Window & { __mizukiPioController?: PioController };
+	// 移动端断点
 	const PIO_MOBILE_BREAKPOINT = 768;
+
+	// ===== 定位当前组件渲染出的 iframe =====
+	// document.currentScript 指向本脚本标签
 	const scriptEl = document.currentScript as HTMLScriptElement | null;
+	// 通过"前一个兄弟元素"定位同组件的 iframe（比全局查询更精确）
 	const renderedEl =
 		scriptEl?.previousElementSibling instanceof HTMLIFrameElement &&
 		scriptEl.previousElementSibling.id === "l2d-iframe"
 			? scriptEl.previousElementSibling
 			: null;
+
+	// 页面中所有 l2d-iframe（可能因页面切换残留多个）
 	const frames = Array.from(
 		document.querySelectorAll<HTMLIFrameElement>("#l2d-iframe"),
 	);
+	// 优先用第一个（最新的），否则用当前组件渲染的
 	const el = frames[0] ?? renderedEl;
 	const configSource = renderedEl ?? el;
 
+	// ===== 去重：移除多余的 iframe =====
+	// 页面切换时旧 iframe 可能未被清理，这里保证只保留一个
 	for (const frame of frames) {
 		if (frame !== el) frame.remove();
 	}
 
 	if (el && configSource) {
+		// 从 data 属性解析配置
 		const config = JSON.parse(configSource.dataset.config || "{}");
 		const hiddenOnMobile = configSource.dataset.hiddenOnMobile === "true";
 
+		// ===== 单例控制器：整个页面只创建一次 =====
+		// 避免多次初始化导致重复监听与状态混乱
 		if (!win.__mizukiPioController) {
+			// ===== 菜单动作映射 =====
+			// iframe 内触发 l2d-action 消息时，根据 action 名执行对应操作
 			const menuActions: Record<string, () => void> = {
 				home: () => (window.location.href = "/"),
 				scrollToTop: () => window.scrollTo({ top: 0, behavior: "smooth" }),
 			};
 
+			// ===== 控制器状态 =====
+			/** 当前目标 iframe */
 			let currentEl: HTMLIFrameElement | null = null;
+			/** 当前配置 */
 			let currentConfig: Record<string, unknown> = {};
+			/** 当前是否在小屏隐藏 */
 			let currentHiddenOnMobile = true;
+			/** 是否正在页面切换中（切换期间不初始化） */
 			let isTransitioning = false;
+			/** 是否已发送过 init 消息（避免重复） */
 			let initSent = false;
+			/** 上次配置的 JSON 字符串（用于判断配置是否变化） */
 			let currentConfigKey = "";
+			/** 挂起的初始化定时器 id */
 			let pendingInit: number | undefined;
+			/** Swup 钩子是否已注册 */
 			let swupHooksRegistered = false;
 
+			/**
+			 * 根据当前断点与配置应用显示/隐藏
+			 * 小屏 + hiddenOnMobile=true → display: none
+			 */
 			function applyVisibility() {
 				if (!currentEl) return;
 				if (
@@ -130,6 +202,10 @@ const isRight = config.position === "right";
 				}
 			}
 
+			/**
+			 * 向 iframe 发送初始化消息
+			 * 幂等：已发送或切换中或小屏隐藏时跳过
+			 */
 			function postInit() {
 				if (!currentEl || initSent || isTransitioning) return;
 				if (
@@ -137,6 +213,7 @@ const isRight = config.position === "right";
 					window.innerWidth <= PIO_MOBILE_BREAKPOINT
 				)
 					return;
+				// 用 postMessage 跨 iframe 传递配置
 				currentEl.contentWindow?.postMessage(
 					{ type: "l2d-init", config: currentConfig },
 					"*",
@@ -144,6 +221,10 @@ const isRight = config.position === "right";
 				initSent = true;
 			}
 
+			/**
+			 * 调度一次初始化（延迟到浏览器空闲时执行）
+			 * 优先用 requestIdleCallback，回退到 setTimeout
+			 */
 			function scheduleInit() {
 				window.clearTimeout(pendingInit);
 				const _window = window as Window & {
@@ -156,27 +237,44 @@ const isRight = config.position === "right";
 					pendingInit = window.setTimeout(postInit, 0);
 				};
 				if (_window.requestIdleCallback) {
+					// 空闲时执行，最多等 2000ms
 					_window.requestIdleCallback(run, { timeout: 2000 });
 				} else {
+					// 回退：500ms 后执行
 					pendingInit = window.setTimeout(postInit, 500);
 				}
 			}
 
+			/**
+			 * 处理来自 iframe 的消息
+			 * - l2d-loaded：模型加载完成 → 调整尺寸并显示
+			 * - l2d-action：用户点击菜单 → 执行对应动作
+			 */
 			function handleMessage(e: MessageEvent) {
+				// 只处理来自当前 iframe 的消息（安全检查）
 				if (!currentEl || e.source !== currentEl.contentWindow) return;
 
 				if (e.data.type === "l2d-loaded") {
+					// 用 iframe 上报的内容高度调整自身高度
 					const h = e.data.contentHeight || 500;
 					currentEl.style.height = h + "px";
+					// 淡入
 					currentEl.style.opacity = "1";
+					// 开启鼠标交互
 					currentEl.style.pointerEvents = "auto";
 				}
 
 				if (e.data.type === "l2d-action") {
+					// 执行菜单动作
 					menuActions[e.data.action]?.();
 				}
 			}
 
+			/**
+			 * 注册 Swup 钩子：页面切换时暂停初始化
+			 * - link:click：点击链接开始切换 → 标记 transitioning
+			 * - visit:end：切换完成 → 恢复并重新调度初始化
+			 */
 			function setupSwupHooks() {
 				const swup = window.swup;
 				if (swupHooksRegistered || !swup?.hooks) return;
@@ -192,12 +290,16 @@ const isRight = config.position === "right";
 				});
 			}
 
+			// ===== 注册全局监听 =====
 			window.addEventListener("message", handleMessage);
 			window.addEventListener("resize", () => {
+				// 尺寸变化时重新计算可见性
 				applyVisibility();
+				// 从隐藏恢复到显示时可能需要重新初始化
 				scheduleInit();
 			});
 
+			// Swup 可能尚未就绪：分两种时机
 			if (window.swup) {
 				setupSwupHooks();
 			} else {
@@ -206,17 +308,23 @@ const isRight = config.position === "right";
 				});
 			}
 
+			// ===== 暴露控制器到全局 =====
+			// update 方法幂等：可重复调用以更新 iframe / 配置
 			win.__mizukiPioController = {
 				update(nextEl, nextConfig, nextHiddenOnMobile) {
+					// 是否换了新的 iframe
 					const isNewFrame = currentEl !== nextEl;
+					// 配置是否有变化（用 JSON 字符串比较）
 					const nextConfigKey = JSON.stringify(nextConfig);
 					currentEl = nextEl;
 					currentConfig = nextConfig;
 					currentHiddenOnMobile = nextHiddenOnMobile;
+					// 新 frame 或配置变化 → 重置 initSent，允许重新初始化
 					if (isNewFrame || currentConfigKey !== nextConfigKey) {
 						initSent = false;
 						currentConfigKey = nextConfigKey;
 					}
+					// 新 frame 需等其 load 完成再初始化
 					if (isNewFrame) {
 						nextEl.addEventListener("load", () => {
 							initSent = false;
@@ -224,6 +332,7 @@ const isRight = config.position === "right";
 						});
 					}
 					applyVisibility();
+					// 如果 iframe 已加载完成，直接调度
 					if (nextEl.contentDocument?.readyState === "complete") {
 						scheduleInit();
 					}
@@ -231,6 +340,7 @@ const isRight = config.position === "right";
 			};
 		}
 
+		// 调用控制器更新（首次或后续调用都会走到这里）
 		win.__mizukiPioController.update(el, config, hiddenOnMobile);
 	}
 </script>

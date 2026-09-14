@@ -1,9 +1,19 @@
 ---
+// 导入浮动按钮组件（复用之前看过的 FloatingButton.astro）
 import FloatingButton from "@components/common/FloatingButton.astro";
+// 导入 i18n key 枚举
 import I18nKey from "@i18n/i18nKey";
+// 导入翻译函数
 import { i18n } from "@i18n/translation";
 ---
 
+<!--
+  回到首页按钮：
+  - 初始带 .hide 类（隐藏），由下方脚本根据当前路径决定是否显示
+  - onclick 调用全局的 backToHome() 函数（在下方脚本中定义）
+  - icon 使用 material-symbols 的首页图标
+  - ariaLabel 用 i18n 翻译
+-->
 <FloatingButton
 	id="back-to-home-btn"
 	icon="material-symbols:home-outline-rounded"
@@ -12,37 +22,62 @@ import { i18n } from "@i18n/translation";
 	class="hide"
 />
 
+<!--
+  is:raw     —— 内容原样输出，不做 Astro 的模板解析
+  is:inline  —— 不打包，直接内联
+  define:vars —— 注入 homeUrl 变量（这里是硬编码 "/"，也可改为配置值）
+
+  定义全局的 backToHome 函数，供按钮的 onclick 调用。
+  优先使用 swup 的 SPA 导航，保证页面切换有过渡动画；
+  swup 不可用时回退到原生跳转。
+-->
 <script is:raw is:inline define:vars={{ homeUrl: "/" }}>
-	window.backToHome = function () {
-		if (window.swup) {
+window.backToHome = function () {
+	if (window.swup) {
+	// SPA 导航（有过渡动画，无整页刷新）
 			window.swup.navigate(homeUrl);
-		} else {
+	} else {
+	// 回退：原生整页跳转
 			window.location.href = homeUrl;
-		}
+	}
 	};
 </script>
 
+<!--
+  可见性控制脚本：
+  根据当前路径是否等于首页路径，决定按钮显示或隐藏。
+-->
 <script is:inline define:vars={{ homeUrl: "/" }}>
-	function updateBackToHomeVisibility() {
-		const btn = document.getElementById("back-to-home-btn");
-		if (!btn) {
-			return;
-		}
-
-		const path = window.location.pathname.replace(/\/$/, "") || "/";
-		const homePath = homeUrl.replace(/\/$/, "") || "/";
-		if (path === homePath) {
-			btn.classList.add("hide");
-		} else {
-			btn.classList.remove("hide");
-		}
+/**
+* 更新"回到首页"按钮的可见性
+* 规则：当前已在首页 → 隐藏按钮；否则 → 显示
+*/
+function updateBackToHomeVisibility() {
+	const btn = document.getElementById("back-to-home-btn");
+	if (!btn) {
+	return;
 	}
 
-	updateBackToHomeVisibility();
+	// 规范化当前路径：去掉末尾斜杠，根路径保持 "/"
+		const path = window.location.pathname.replace(/\/$/, "") || "/";
+	// 同样规范化首页路径
+		const homePath = homeUrl.replace(/\/$/, "") || "/";
+	// 已在首页则隐藏，否则显示
+		if (path === homePath) {
+	btn.classList.add("hide");
+	} else {
+	btn.classList.remove("hide");
+	}
+	}
 
-	document.addEventListener("astro:page-load", updateBackToHomeVisibility);
-	document.addEventListener(
-		"swup:contentReplaced",
-		updateBackToHomeVisibility,
-	);
+// 首次执行：页面初始加载时确定可见性
+updateBackToHomeVisibility();
+
+// Astro View Transitions 页面加载事件
+document.addEventListener("astro:page-load", updateBackToHomeVisibility);
+// swup 页面内容替换事件
+document.addEventListener(
+"swup:contentReplaced",
+updateBackToHomeVisibility,
+);
 </script>

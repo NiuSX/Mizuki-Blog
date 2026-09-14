@@ -1,11 +1,32 @@
 ---
+/**
+	* 组件属性定义
+	*/
 export interface Props {
+	/** 结构化数据对象（会被序列化为 JSON-LD） */
 	data: Record<string, unknown>;
 }
 
+// 解构 props
 const { data } = Astro.props;
 ---
 
+<!--
+  JSON-LD 结构化数据脚本：
+  - is:inline：不打包，直接内联输出（避免 Astro 处理 JSON 内容）
+  - slot="head"：Astro 的具名插槽，把脚本插入到父组件指定的 <head> 位置
+  - type="application/ld+json"：JSON-LD 的标准 MIME 类型，
+    搜索引擎（Google/Bing 等）据此识别结构化数据
+  - set:html：将 data 序列化后的 JSON **原样**注入标签内容
+    （不能用普通插值 {JSON.stringify(data)}，否则会被 HTML 转义）
+
+  用途：向搜索引擎提供机器可读的结构化数据，
+  帮助生成富媒体搜索结果（Rich Results），如：
+    - 文章（Article）
+    - 面包屑（BreadcrumbList）
+    - 组织信息（Organization）
+    - 网站信息（WebSite）
+-->
 <script
 	is:inline
 	slot="head"

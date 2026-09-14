@@ -1,13 +1,38 @@
 ---
+/**
+	* 链接组件的属性定义
+	* 提供样式变体、下划线控制、以及安全的 target="_blank" 处理
+	*/
 interface Props {
+	/** 链接地址，默认 "#"（占位） */
 	href?: string;
+
+	/** 原生 target 属性：
+	 *  - "_blank"：新标签页打开
+	 *  - "_self"：当前页面（默认行为）
+	 *  - "_parent" / "_top"：用于 iframe 场景
+	 */
 	target?: "_blank" | "_self" | "_parent" | "_top";
+
+	/** 原生 rel 属性（会与 target="_blank" 的默认安全值合并） */
 	rel?: string;
+
+	/** 视觉变体：
+	 *  - "default"：主色链接（默认）
+	 *  - "muted"：弱化链接（降透明度，悬停恢复）
+	 *  - "primary"：强调链接（主色 + 加粗）
+	 */
 	variant?: "default" | "muted" | "primary";
+
+	/** 是否添加下划线（默认无，悬停时自动去除） */
 	underline?: boolean;
+
+	/** 外部传入的额外类名 */
 	class?: string;
 }
 
+// 解构 props 并设置默认值
+// class 重命名为 className，避免与保留字冲突
 const {
 	href = "#",
 	target,
@@ -17,23 +42,46 @@ const {
 	class: className = "",
 }: Props = Astro.props;
 
+// 基础类：内联 flex + 颜色过渡
 const baseClasses = "inline-flex items-center transition-colors duration-200";
 
+// 变体类映射：三种视觉风格
 const variantClasses = {
+	// 默认：主色文字，悬停降低透明度
 	default: "text-[var(--primary)] hover:opacity-80",
+	// 弱化：常规文字色 + 70% 透明度，悬停恢复为完全不透明
 	muted: "text-[var(--text-color)] opacity-70 hover:opacity-100",
+	// 强调：主色 + 加粗，悬停降低透明度
 	primary: "text-[var(--primary)] font-medium hover:opacity-80",
 };
 
+// 下划线类：仅在 underline=true 时添加
+// 悬停时移除下划线，形成"下划线渐隐"的交互反馈
 const underlineClass = underline ? "underline hover:no-underline" : "";
 
+// 合并所有类名
 const combinedClass =
 	`${baseClasses} ${variantClasses[variant]} ${underlineClass} ${className}`.trim();
 
+/**
+ * 计算最终的 rel 属性值
+ *
+ * 安全说明：当 target="_blank" 时，浏览器会把新页面的 window.opener
+ * 指向当前页面，存在"反向控制"和性能问题（tabnabbing 攻击）。
+ * 因此必须自动附加 "noopener noreferrer"：
+ *   - noopener：新页面无法通过 window.opener 操作原页面
+ *   - noreferrer：不发送 Referer 头（同时隐含 noopener 效果）
+ *
+ * 若调用方已传入 rel，则追加在安全值之后（保留自定义值）
+ */
 const relValue =
 	target === "_blank" ? `noopener noreferrer${rel ? ` ${rel}` : ""}` : rel;
 ---
 
+<!-- 渲染原生 <a> 元素：
+     - href / target / rel 直接透传
+     - class 使用合并后的完整类名
+     - 内容通过 <slot /> 由使用方填充 -->
 <a href={href} target={target} rel={relValue} class={combinedClass}>
 	<slot />
 </a>

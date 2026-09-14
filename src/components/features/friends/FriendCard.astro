@@ -1,21 +1,35 @@
 ---
+// 导入 i18n 相关
 import I18nKey from "../../../i18n/i18nKey";
 import { i18n } from "../../../i18n/translation";
 
+/**
+ * 组件属性定义
+ */
 interface Props {
+	/** 友链数据 */
 	friend: {
-		title: string;
-		siteurl: string;
-		imgurl: string;
-		desc: string;
-		tags: string[];
+		title: string;      // 站点标题
+		siteurl: string;    // 站点地址
+		imgurl: string;     // 头像/站点图片
+		desc: string;       // 站点描述
+		tags: string[];     // 标签
 	};
 }
 
+// 解构 props
 const { friend } = Astro.props;
+
+// 从站点地址中提取主机名（用于显示简洁的域名，如 "example.com"）
 const hostname = new URL(friend.siteurl).hostname;
 ---
 
+<!--
+  卡片容器：
+  - data-title / data-desc / data-tags 供外部搜索/筛选脚本使用
+  - data-title 与 data-desc 转为小写，便于不区分大小写的匹配
+  - group 配合 group-hover 实现父悬停子响应
+-->
 <div
 	class="friend-card group relative bg-transparent rounded-xl border border-black/10 dark:border-white/10 overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
 	data-title={friend.title.toLowerCase()}
@@ -25,6 +39,7 @@ const hostname = new URL(friend.siteurl).hostname;
 	<div class="p-6">
 		<!-- 头像和标题区 -->
 		<div class="flex items-start gap-4 mb-4">
+			<!-- 头像容器：圆角方形，悬停时图片放大 -->
 			<div
 				class="w-16 h-16 shrink-0 rounded-xl overflow-hidden bg-(--btn-regular-bg) ring-2 ring-transparent transition-all duration-300"
 			>
@@ -37,11 +52,13 @@ const hostname = new URL(friend.siteurl).hostname;
 			</div>
 
 			<div class="flex-1 min-w-0">
+				<!-- 站点标题：超长截断，悬停变主色 -->
 				<h3
 					class="text-xl font-bold text-black/90 dark:text-white/90 mb-1 truncate group-hover:text-(--primary) transition-colors duration-200"
 				>
 					{friend.title}
 				</h3>
+				<!-- 域名链接：显示 hostname 而非完整 URL，更简洁 -->
 				<a
 					href={friend.siteurl}
 					target="_blank"
@@ -53,14 +70,14 @@ const hostname = new URL(friend.siteurl).hostname;
 			</div>
 		</div>
 
-		<!-- 描述 -->
+		<!-- 描述：两行截断，min-h-10 保持卡片高度一致 -->
 		<p
 			class="text-sm text-black/60 dark:text-white/60 mb-4 line-clamp-2 min-h-10"
 		>
 			{friend.desc}
 		</p>
 
-		<!-- 标签 -->
+		<!-- 标签列表：主色浅背景 -->
 		<div class="flex flex-wrap gap-2 mb-4">
 			{
 				friend.tags.map((tag) => (
@@ -71,14 +88,16 @@ const hostname = new URL(friend.siteurl).hostname;
 			}
 		</div>
 
-		<!-- 操作按钮 -->
+		<!-- 操作按钮行：访问 + 复制链接 -->
 		<div class="flex gap-2">
+			<!-- 主按钮：访问站点（主色填充） -->
 			<a
 				href={friend.siteurl}
 				target="_blank"
 				rel="noopener noreferrer"
 				class="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-(--primary) text-white hover:bg-(--primary)/90 active:scale-95 transition-all duration-200 font-medium text-sm"
 			>
+				<!-- 外链图标 -->
 				<svg
 					class="w-4 h-4"
 					fill="none"
@@ -94,11 +113,13 @@ const hostname = new URL(friend.siteurl).hostname;
 				</svg>
 				{i18n(I18nKey.friendsVisit)}
 			</a>
+			<!-- 复制链接按钮：次级样式，供外部脚本通过 .copy-link-btn 委托处理 -->
 			<button
 				class="copy-link-btn px-3 py-2 rounded-lg bg-(--btn-regular-bg) hover:bg-(--btn-regular-bg-hover) active:scale-95 transition-all duration-200 text-black/70 dark:text-white/70"
 				data-url={friend.siteurl}
 				title={i18n(I18nKey.friendsCopyLink)}
 			>
+				<!-- 复制图标 -->
 				<svg
 					class="w-4 h-4"
 					fill="none"
@@ -116,7 +137,7 @@ const hostname = new URL(friend.siteurl).hostname;
 		</div>
 	</div>
 
-	<!-- 悬停装饰效果 -->
+	<!-- 悬停渐变叠层：默认透明，悬停淡入 -->
 	<div
 		class="absolute inset-0 bg-linear-to-br from-(--primary)/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
 	>
@@ -124,6 +145,7 @@ const hostname = new URL(friend.siteurl).hostname;
 </div>
 
 <style>
+	/* 卡片入场动画：向上淡入 */
 	.friend-card {
 		animation: fadeInUp 0.5s ease-out forwards;
 		opacity: 0;
@@ -140,22 +162,11 @@ const hostname = new URL(friend.siteurl).hostname;
 		}
 	}
 
-	.friend-card:nth-child(1) {
-		animation-delay: 0.05s;
-	}
-	.friend-card:nth-child(2) {
-		animation-delay: 0.1s;
-	}
-	.friend-card:nth-child(3) {
-		animation-delay: 0.15s;
-	}
-	.friend-card:nth-child(4) {
-		animation-delay: 0.2s;
-	}
-	.friend-card:nth-child(5) {
-		animation-delay: 0.25s;
-	}
-	.friend-card:nth-child(6) {
-		animation-delay: 0.3s;
-	}
+	/* 逐个延迟入场：每张间隔 50ms（比其它卡片的 30ms 稍大） */
+	.friend-card:nth-child(1) { animation-delay: 0.05s; }
+	.friend-card:nth-child(2) { animation-delay: 0.1s; }
+	.friend-card:nth-child(3) { animation-delay: 0.15s; }
+	.friend-card:nth-child(4) { animation-delay: 0.2s; }
+	.friend-card:nth-child(5) { animation-delay: 0.25s; }
+	.friend-card:nth-child(6) { animation-delay: 0.3s; }
 </style>

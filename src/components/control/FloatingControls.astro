@@ -1,29 +1,53 @@
 ---
+// 导入 Astro 的标题类型（Markdown 解析出的标题结构）
 import type { MarkdownHeading } from "astro";
 
+// 从配置入口导入音乐播放器配置与站点配置
 import { musicPlayerConfig, siteConfig } from "../../config";
+// 导入浮动的目录组件（TOC = Table of Contents）
 import FloatingTOC from "../features/toc/FloatingTOC.astro";
+// 导入回到首页按钮
 import BackToHome from "./BackToHome.astro";
+// 导入回到顶部按钮
 import BackToTop from "./BackToTop.astro";
+// 导入音乐浮动按钮（Svelte 组件）
 import MusicFabButton from "./MusicFabButton.svelte";
 
+/**
+ * 组件属性定义
+ */
 interface Props {
+	/** 页面的 Markdown 标题列表（供 TOC 组件使用） */
 	headings?: MarkdownHeading[];
 }
 
+// 解构 props，headings 默认空数组
 const { headings = [] } = Astro.props;
 ---
 
+<!--
+  浮动控件容器：
+  按顺序排列多个浮动按钮（音乐 / TOC / 回到首页 / 回到顶部）
+  每个按钮用 data-control-key 标识类型，供脚本做可见性管理
+-->
 <div class="floating-controls-container">
+	<!--
+	  音乐浮动按钮：三重条件同时满足才渲染
+	  1. 音乐播放器已启用
+	  2. 配置了显示浮动播放器
+	  3. 浮动入口模式为 "fab"（浮动按钮）
+	  client:idle 表示浏览器空闲时再水合（避免阻塞首屏）
+	-->
 	{
 		musicPlayerConfig.enable &&
-			musicPlayerConfig.showFloatingPlayer &&
-			(musicPlayerConfig.floatingEntryMode ?? "default") === "fab" && (
-				<div class="floating-control-item" data-control-key="music">
-					<MusicFabButton client:idle />
-				</div>
-			)
+		musicPlayerConfig.showFloatingPlayer &&
+		(musicPlayerConfig.floatingEntryMode ?? "default") === "fab" && (
+			<div class="floating-control-item" data-control-key="music">
+				<MusicFabButton client:idle />
+			</div>
+		)
 	}
+	<!-- TOC 按钮：TOC 已启用且为浮动模式时渲染 -->
 	{
 		siteConfig.toc.enable && siteConfig.toc.floating && (
 			<div class="floating-control-item" data-control-key="toc">
@@ -31,30 +55,35 @@ const { headings = [] } = Astro.props;
 			</div>
 		)
 	}
+	<!-- 回到首页按钮（始终渲染，可见性由自身脚本控制） -->
 	<div class="floating-control-item" data-control-key="home">
 		<BackToHome />
 	</div>
+	<!-- 回到顶部按钮（始终渲染，可见性由自身脚本控制） -->
 	<div class="floating-control-item" data-control-key="top">
 		<BackToTop />
 	</div>
 </div>
 
 <style>
+	/* ===== CSS 变量定义（全局，供子元素与其它组件读取） ===== */
 	:global(:root) {
-		--fab-group-right: 1.5rem;
-		--fab-group-bottom: 4rem;
-		--fab-group-base-bottom: 4rem;
-		--fab-group-gap: 0.5rem;
-		--fab-button-size: 3rem;
-		--fab-visible-count: 1;
+		--fab-group-right: 1.5rem;        /* 容器距右边距 */
+		--fab-group-bottom: 4rem;         /* 容器距底边距 */
+		--fab-group-base-bottom: 4rem;    /* 基础底边距（供外部动态调整） */
+		--fab-group-gap: 0.5rem;          /* 按钮之间的间距 */
+		--fab-button-size: 3rem;          /* 单个按钮尺寸 */
+		--fab-visible-count: 1;           /* 当前可见按钮数量（由脚本更新） */
 	}
 
+	/* 容器：固定定位，纵向排列，右对齐 */
 	.floating-controls-container {
 		position: fixed;
 		z-index: 50;
 		display: flex;
 		flex-direction: column;
 		align-items: flex-end;
+		/* 容器本身不接收鼠标事件（由子项单独开启），避免遮挡下方内容 */
 		pointer-events: none;
 
 		right: var(--fab-group-right);
@@ -62,15 +91,19 @@ const { headings = [] } = Astro.props;
 		transition: bottom 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
+	/* 单个浮动项：默认可见，通过过渡实现"收起/展开"动画 */
 	.floating-control-item {
 		display: flex;
 		align-items: center;
 		justify-content: flex-end;
+		/* 子项恢复接收鼠标事件 */
 		pointer-events: auto;
 		max-height: var(--fab-button-size);
 		opacity: 1;
 		transform: translateY(0) scale(1);
+		/* 变换原点在右下角，收起时朝右下方缩小 */
 		transform-origin: bottom right;
+		/* 多属性过渡：高度、透明度、变换、外边距 */
 		transition:
 			max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1),
 			opacity 0.2s ease,
@@ -79,10 +112,12 @@ const { headings = [] } = Astro.props;
 		overflow: visible;
 	}
 
+	/* 已堆叠的项：与上一项之间加间距（脚本动态添加） */
 	.floating-control-item.is-stacked {
 		margin-top: var(--fab-group-gap);
 	}
 
+	/* 已收起的项：高度归零、透明、缩小、禁用交互 */
 	.floating-control-item.is-collapsed {
 		max-height: 0;
 		opacity: 0;
@@ -91,6 +126,8 @@ const { headings = [] } = Astro.props;
 		pointer-events: none;
 	}
 
+	/* ===== 可见性锁定态（如音乐面板展开时强制显示按钮） ===== */
+	/* 被锁定的按钮：强制恢复完整尺寸与可见性 */
 	:global(html.fab-visibility-locked #floating-toc-btn.fab-lock-visible),
 	:global(html.fab-visibility-locked #back-to-home-btn.fab-lock-visible),
 	:global(html.fab-visibility-locked #back-to-top-btn.fab-lock-visible) {
@@ -110,6 +147,7 @@ const { headings = [] } = Astro.props;
 		box-sizing: border-box !important;
 	}
 
+	/* 亮色模式下的锁定态：改用主题边框色 */
 	:global(
 		html:not(.dark).fab-visibility-locked #floating-toc-btn.fab-lock-visible
 	),
@@ -122,6 +160,7 @@ const { headings = [] } = Astro.props;
 		border-color: var(--line-color) !important;
 	}
 
+	/* 锁定时即使按钮带 .hide 类，也强制显示（覆盖隐藏逻辑） */
 	:global(html.fab-visibility-locked #floating-toc-btn.fab-lock-visible.hide),
 	:global(html.fab-visibility-locked #back-to-home-btn.fab-lock-visible.hide),
 	:global(html.fab-visibility-locked #back-to-top-btn.fab-lock-visible.hide) {
@@ -138,12 +177,14 @@ const { headings = [] } = Astro.props;
 		border-style: solid !important;
 	}
 
+	/* 锁定时按钮内的 SVG 也强制可见 */
 	:global(html.fab-visibility-locked #floating-toc-btn.fab-lock-visible svg),
 	:global(html.fab-visibility-locked #back-to-home-btn.fab-lock-visible svg),
 	:global(html.fab-visibility-locked #back-to-top-btn.fab-lock-visible svg) {
 		opacity: 1 !important;
 	}
 
+	/* 锁定时被标记为收起的项，强制保持收起 */
 	:global(
 		html.fab-visibility-locked .floating-control-item.fab-lock-collapsed
 	) {
@@ -155,19 +196,22 @@ const { headings = [] } = Astro.props;
 		overflow: hidden !important;
 	}
 
+	/* ===== 响应式断点：逐级缩小边距与按钮尺寸 ===== */
+
+	/* 平板（< 1024px） */
 	@media (width < 1024px) {
 		:global(:root) {
 			--fab-group-right: 1rem;
-			--fab-group-bottom: 6rem;
+			--fab-group-bottom: 6rem;      /* 抬高，避开底部导航栏 */
 			--fab-group-base-bottom: 6rem;
 		}
-
 		.floating-controls-container {
 			right: var(--fab-group-right);
 			bottom: var(--fab-group-bottom);
 		}
 	}
 
+	/* 手机（< 768px） */
 	@media (width < 768px) {
 		:global(:root) {
 			--fab-group-right: 0.75rem;
@@ -175,13 +219,13 @@ const { headings = [] } = Astro.props;
 			--fab-group-base-bottom: 5rem;
 			--fab-button-size: 2.75rem;
 		}
-
 		.floating-controls-container {
 			right: var(--fab-group-right);
 			bottom: var(--fab-group-bottom);
 		}
 	}
 
+	/* 小屏手机（< 480px） */
 	@media (width < 480px) {
 		:global(:root) {
 			--fab-group-right: 0.5rem;
@@ -189,32 +233,31 @@ const { headings = [] } = Astro.props;
 			--fab-group-base-bottom: 4.5rem;
 			--fab-button-size: 2.5rem;
 		}
-
 		.floating-controls-container {
 			right: var(--fab-group-right);
 			bottom: var(--fab-group-bottom);
 		}
 	}
 
+	/* 极窄屏（< 320px） */
 	@media (width < 320px) {
 		:global(:root) {
 			--fab-group-right: 0.25rem;
 			--fab-group-bottom: 4rem;
 			--fab-group-base-bottom: 4rem;
 		}
-
 		.floating-controls-container {
 			right: var(--fab-group-right);
 			bottom: var(--fab-group-bottom);
 		}
 	}
 
+	/* 横屏且高度不足（如手机横屏）：抬高容器避免被遮挡 */
 	@media (orientation: landscape) and (max-height: 500px) {
 		:global(:root) {
 			--fab-group-bottom: 4rem;
 			--fab-group-base-bottom: 4rem;
 		}
-
 		.floating-controls-container {
 			bottom: var(--fab-group-bottom);
 		}
@@ -223,33 +266,54 @@ const { headings = [] } = Astro.props;
 
 <script is:inline>
 	(() => {
+		// ===== 全局状态初始化（跨页面切换保持，避免重复注册监听） =====
+
+		// 存储每个按钮的 MutationObserver 实例，用于销毁旧的观察器
 		if (!window.__floatingControlObservers) {
 			window.__floatingControlObservers = new Map();
 		}
 
+		// 全局状态对象
 		if (!window.__floatingControlState) {
 			window.__floatingControlState = {
+				/** 音乐面板是否展开（展开时锁定浮动控件可见性） */
 				isMusicPanelExpanded: false,
+				/** 是否已调度可见性更新（防抖标记） */
 				visibilityUpdateScheduled: false,
+				/** Mermaid 是否正在渲染（渲染期间暂停更新） */
 				mermaidRendering: false,
+				/** Mermaid 渲染结束的延迟定时器 */
 				mermaidRenderTimer: null,
+				/** 事件监听是否已注册（避免重复注册） */
 				listenersRegistered: false,
 			};
 		}
 
 		const state = window.__floatingControlState;
+		// 需要观察的按钮 id 清单
 		const controlButtonIds = [
 			"floating-toc-btn",
 			"back-to-home-btn",
 			"back-to-top-btn",
 		];
 
+		/**
+		 * 判断指定按钮当前是否可见
+		 * 规则：元素存在且不含 .hide 类
+		 * @param {string} id 按钮 id
+		 * @returns {boolean} 是否可见
+		 */
 		function isButtonVisible(id) {
 			const element = document.getElementById(id);
 			return Boolean(element && !element.classList.contains("hide"));
 		}
 
+		/**
+		 * 更新所有浮动项的可见性与堆叠状态
+		 * 根据每个按钮的实际可见性，给对应容器项加/去 .is-collapsed 和 .is-stacked
+		 */
 		function updateFloatingControlVisibility() {
+			// 音乐面板展开时不动（由锁定逻辑接管）
 			if (state.isMusicPanelExpanded) {
 				return;
 			}
@@ -264,6 +328,7 @@ const { headings = [] } = Astro.props;
 				const key = item.getAttribute("data-control-key");
 				let visible = true;
 
+				// 根据 key 判断对应按钮的可见性
 				if (key === "toc") {
 					visible = isButtonVisible("floating-toc-btn");
 				} else if (key === "home") {
@@ -271,7 +336,9 @@ const { headings = [] } = Astro.props;
 				} else if (key === "top") {
 					visible = isButtonVisible("back-to-top-btn");
 				}
+				// music 类型的项默认 visible=true（由自身的锁定逻辑管理）
 
+				// 不可见 → 加 .is-collapsed；可见且有前序可见项 → 加 .is-stacked
 				item.classList.toggle("is-collapsed", !visible);
 				item.classList.toggle("is-stacked", visible && hasVisibleItem);
 
@@ -281,18 +348,25 @@ const { headings = [] } = Astro.props;
 				}
 			}
 
+			// 更新 CSS 变量，供外部样式读取当前可见数量
 			document.documentElement.style.setProperty(
 				"--fab-visible-count",
 				String(Math.max(visibleCount, 1)),
 			);
 		}
 
+		/**
+		 * 为指定按钮注册 MutationObserver，监听 .hide 类的变化
+		 * 按钮可见性变化时触发 scheduleVisibilityUpdate（防抖更新）
+		 * @param {string} id 按钮 id
+		 */
 		function observeFloatingControlButton(id) {
 			const target = document.getElementById(id);
 			if (!target) {
 				return;
 			}
 
+			// 若已有旧观察器则先断开，避免重复观察
 			const existing = window.__floatingControlObservers.get(id);
 			if (existing) {
 				existing.disconnect();
@@ -302,6 +376,7 @@ const { headings = [] } = Astro.props;
 				scheduleVisibilityUpdate();
 			});
 
+			// 只监听 class 属性变化
 			observer.observe(target, {
 				attributes: true,
 				attributeFilter: ["class"],
@@ -310,6 +385,7 @@ const { headings = [] } = Astro.props;
 			window.__floatingControlObservers.set(id, observer);
 		}
 
+		/** 初始化：立即更新一次可见性，并为所有按钮注册观察器 */
 		function initFloatingControlVisibility() {
 			updateFloatingControlVisibility();
 			observeFloatingControlButton("floating-toc-btn");
@@ -317,14 +393,21 @@ const { headings = [] } = Astro.props;
 			observeFloatingControlButton("back-to-top-btn");
 		}
 
+		/**
+		 * 锁定可见性（音乐面板展开时调用）
+		 * 给 <html> 加 .fab-visibility-locked 类，
+		 * 并通过 .fab-lock-visible / .fab-lock-collapsed 记录当前状态
+		 */
 		function lockFloatingControlVisibility() {
 			document.documentElement.classList.add("fab-visibility-locked");
 
+			// 为每个浮动项记录"锁定时的可见性"
 			const items = document.querySelectorAll(
 				".floating-control-item[data-control-key]",
 			);
 			for (const item of items) {
 				const key = item.getAttribute("data-control-key");
+				// key → 按钮 id 的映射
 				const id =
 					key === "toc"
 						? "floating-toc-btn"
@@ -339,12 +422,15 @@ const { headings = [] } = Astro.props;
 				}
 
 				const button = document.getElementById(id);
+				// 当前是否可见
 				const isVisible = Boolean(
 					button && !button.classList.contains("hide"),
 				);
+				// 不可见的项标记为锁定收起
 				item.classList.toggle("fab-lock-collapsed", !isVisible);
 			}
 
+			// 可见的按钮标记为锁定可见
 			for (const id of controlButtonIds) {
 				const button = document.getElementById(id);
 				if (!button) {
@@ -356,9 +442,14 @@ const { headings = [] } = Astro.props;
 			}
 		}
 
+		/**
+		 * 解锁可见性（音乐面板收起时调用）
+		 * 移除所有锁定相关的类，让常规可见性逻辑重新接管
+		 */
 		function unlockFloatingControlVisibility() {
 			document.documentElement.classList.remove("fab-visibility-locked");
 
+			// 清掉所有项上的锁定收起标记
 			const items = document.querySelectorAll(
 				".floating-control-item[data-control-key]",
 			);
@@ -366,31 +457,41 @@ const { headings = [] } = Astro.props;
 				item.classList.remove("fab-lock-collapsed");
 			}
 
+			// 清掉所有按钮上的锁定可见标记
 			for (const id of controlButtonIds) {
 				const button = document.getElementById(id);
 				button?.classList.remove("fab-lock-visible");
 			}
 		}
 
+		/**
+		 * 处理音乐面板状态变化
+		 * @param {CustomEvent} event 事件对象，detail.isExpanded 表示是否展开
+		 */
 		function handleMusicPanelState(event) {
 			const expanded = Boolean(event?.detail?.isExpanded);
+			// 状态未变化则忽略
 			if (expanded === state.isMusicPanelExpanded) {
 				return;
 			}
 
 			state.isMusicPanelExpanded = expanded;
 			if (state.isMusicPanelExpanded) {
+				// 展开 → 锁定
 				lockFloatingControlVisibility();
 			} else {
+				// 收起 → 解锁并重新计算可见性
 				unlockFloatingControlVisibility();
 				updateFloatingControlVisibility();
 			}
 		}
 
+		/** Mermaid 渲染开始：标记渲染中，暂停可见性更新 */
 		function handleMermaidRenderStart() {
 			state.mermaidRendering = true;
 		}
 
+		/** Mermaid 渲染结束：延迟 120ms 后恢复更新（等待 DOM 稳定） */
 		function handleMermaidRenderDone() {
 			clearTimeout(state.mermaidRenderTimer);
 			state.mermaidRenderTimer = setTimeout(() => {
@@ -399,19 +500,24 @@ const { headings = [] } = Astro.props;
 			}, 120);
 		}
 
+		// ===== 注册全局事件监听（只注册一次） =====
 		if (!state.listenersRegistered) {
+			// DOM 就绪时初始化
 			document.addEventListener(
 				"DOMContentLoaded",
 				initFloatingControlVisibility,
 			);
+			// Astro 页面切换后重新初始化
 			document.addEventListener(
 				"astro:page-load",
 				initFloatingControlVisibility,
 			);
+			// 音乐面板状态变化
 			window.addEventListener(
 				"music-sidebar:state",
 				handleMusicPanelState,
 			);
+			// Mermaid 渲染生命周期
 			window.addEventListener(
 				"mermaid:render:start",
 				handleMermaidRenderStart,
@@ -423,15 +529,22 @@ const { headings = [] } = Astro.props;
 			state.listenersRegistered = true;
 		}
 
+		// 立即执行一次初始化（应对脚本在 DOM 已就绪后注入的情况）
 		initFloatingControlVisibility();
 
+		/**
+		 * 调度一次可见性更新（用 requestAnimationFrame 防抖）
+		 * 避免多次 MutationObserver 回调导致重复计算
+		 */
 		function scheduleVisibilityUpdate() {
+			// 已调度中 或 Mermaid 渲染中 → 跳过
 			if (state.visibilityUpdateScheduled || state.mermaidRendering) {
 				return;
 			}
 			state.visibilityUpdateScheduled = true;
 			requestAnimationFrame(() => {
 				state.visibilityUpdateScheduled = false;
+				// 渲染期间不更新
 				if (!state.mermaidRendering) {
 					updateFloatingControlVisibility();
 				}

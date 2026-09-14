@@ -1,14 +1,26 @@
 ---
+/**
+	* 番剧筛选组件属性定义
+	* 所有标签文本由父组件传入（便于 i18n 统一处理）
+	*/
 interface Props {
+	/** "全部"标签文本 */
 	filterAllLabel: string;
+	/** "在看"标签文本 */
 	statusWatchingLabel: string;
+	/** "想看"标签文本 */
 	statusPlannedLabel: string;
+	/** "已看"标签文本 */
 	statusCompletedLabel: string;
+	/** "搁置"标签文本（可选，仅在扩展筛选时使用） */
 	statusOnHoldLabel?: string;
+	/** "抛弃"标签文本（可选，仅在扩展筛选时使用） */
 	statusDroppedLabel?: string;
+	/** 是否显示扩展筛选（搁置 + 抛弃） */
 	showExtendedFilters: boolean;
 }
 
+// 解构 props
 const {
 	filterAllLabel,
 	statusWatchingLabel,
@@ -20,19 +32,33 @@ const {
 } = Astro.props;
 ---
 
+<!-- 筛选标签容器：可换行排列 -->
 <div class="anime-filter-container flex flex-wrap gap-2">
+	<!--
+	  "全部"按钮：
+	  - 默认带 anime-active 类（初始选中态）
+	  - data-status="all" 供客户端脚本识别筛选目标
+	-->
 	<button class="anime-filter-tag anime-active" data-status="all"
-		>{filterAllLabel}</button
+	>{filterAllLabel}</button
 	>
+	<!-- "在看" -->
 	<button class="anime-filter-tag" data-status="watching"
-		>{statusWatchingLabel}</button
+	>{statusWatchingLabel}</button
 	>
+	<!-- "想看" -->
 	<button class="anime-filter-tag" data-status="planned"
-		>{statusPlannedLabel}</button
+	>{statusPlannedLabel}</button
 	>
+	<!-- "已看" -->
 	<button class="anime-filter-tag" data-status="completed"
-		>{statusCompletedLabel}</button
+	>{statusCompletedLabel}</button
 	>
+	<!--
+	  扩展筛选（搁置 + 抛弃）：
+	  仅当 showExtendedFilters 为 true 时渲染。
+	  某些数据源（如 Bilibili）只有三种状态，不需要这两个。
+	-->
 	{
 		showExtendedFilters && (
 			<>

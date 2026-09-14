@@ -1,59 +1,97 @@
 ---
+// 导入配套的样式文件（Astro 会处理并注入到页面）
 import "./page-progress-bar.css";
 
+/**
+ * 组件属性定义
+ */
 interface Props {
+	/** 是否启用页面进度条 */
 	enable: boolean;
+	/** 进度条高度（px） */
 	height: number;
+	/** 动画时长（ms） */
 	duration: number;
 }
 
+// 解构 props
 const { enable, height, duration } = Astro.props;
 ---
 
+<!-- 仅在 enable=true 时渲染进度条与脚本 -->
 {enable && (
-	<>
-		<div
-			id="page-progress-bar"
-			style={`--page-progress-bar-height: ${height}px; --page-progress-bar-duration: ${duration}ms;`}
-		/>
+<>
+	<!--
+      进度条元素：
+      - 通过内联 CSS 变量把 height / duration 传给样式文件
+      - 样式文件里用 var(--page-progress-bar-height) 等读取
+    -->
+	<div
+		id="page-progress-bar"
+		style={`--page-progress-bar-height: ${height}px; --page-progress-bar-duration: ${duration}ms;`}
+	/>
 
-		<script is:inline define:vars={{ enable }}>
-			if (!enable) {
-				const el = document.getElementById("page-progress-bar");
+	<!--
+      is:inline  —— 不打包，直接内联到 HTML
+      define:vars —— 把 enable 注入脚本作用域
+    -->
+	<script is:inline define:vars={{ enable }}>
+		// 若 enable=false（理论上外层已不渲染，此处为双重保险），
+		// 主动移除进度条元素
+		if (!enable) {
+			const el = document.getElementById("page-progress-bar");
 			if (el) {el.remove();}
-			}
+		}
 
-			function setupProgressBar() {
-				if (!window.swup) {return;}
+		/**
+		 * 绑定 swup 钩子，驱动进度条动画
+		 * - visit:start：开始导航 → 进入"加载中"状态
+		 * - visit:end：导航完成 → 进入"收尾"状态并淡出
+		 */
+		function setupProgressBar() {
+			// swup 未就绪则直接返回
+			if (!window.swup) {return;}
 
-				window.swup.hooks.on("visit:start", () => {
-					const bar = document.getElementById("page-progress-bar");
-					if (bar) {
-						bar.classList.remove("finishing", "done");
-						void bar.offsetWidth;
-						bar.classList.add("loading");
-					}
-				});
+			// 导航开始：重置并启动加载动画
+			window.swup.hooks.on("visit:start", () => {
+				const bar = document.getElementById("page-progress-bar");
+				if (bar) {
+					// 先清掉上一轮的结束态类
+					bar.classList.remove("finishing", "done");
+					// 强制重排（读取 offsetWidth），
+					// 让浏览器"忘记"旧状态，从而能重新触发 CSS 动画
+					void bar.offsetWidth;
+					// 进入加载态
+					bar.classList.add("loading");
+				}
+			});
 
-				window.swup.hooks.on("visit:end", () => {
-					const bar = document.getElementById("page-progress-bar");
-					if (bar) {
-						bar.classList.remove("loading");
-						bar.classList.add("finishing");
-						setTimeout(() => {
-							bar.classList.remove("finishing");
-							bar.classList.add("done");
-							setTimeout(() => bar.classList.remove("done"), 300);
-						}, 200);
-					}
-				});
-			}
+			// 导航结束：播放收尾动画并淡出
+			window.swup.hooks.on("visit:end", () => {
+				const bar = document.getElementById("page-progress-bar");
+				if (bar) {
+					// 移除加载态，进入收尾态（快速冲到 100%）
+					bar.classList.remove("loading");
+					bar.classList.add("finishing");
+					// 200ms 后切换到"完成"态（淡出）
+					setTimeout(() => {
+						bar.classList.remove("finishing");
+						bar.classList.add("done");
+						// 300ms 后再移除 done，为下轮做准备
+						setTimeout(() => bar.classList.remove("done"), 300);
+					}, 200);
+				}
+			});
+		}
 
-			if (window.swup) {
-				setupProgressBar();
-			} else {
-				document.addEventListener("swup:enable", setupProgressBar);
-			}
-		</script>
-	</>
-)}
+		// swup 可能尚未初始化：分两种时机绑定
+		if (window.swup) {
+			// 已就绪：立即绑定
+			setupProgressBar();
+		} else {
+			// 未就绪：等 swup:enable 事件后绑定
+			document.addEventListener("swup:enable", setupProgressBar);
+		}
+	</script>
+</>
+	)}

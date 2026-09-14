@@ -1,16 +1,20 @@
 ---
+// 从同级 types 文件导入 IconProps 类型定义
 import type { IconProps } from "./types";
 
+// 从 Astro.props 解构图标组件属性（用 as IconProps 标注类型）
 const {
-	icon,
-	class: className = "",
-	style = "",
-	size = "md",
-	color,
-	fallback = "●",
-	loading = "lazy",
+	icon,                              // 图标名（如 "fa6-solid:home"）
+	class: className = "",             // 外部类名，重命名避免保留字冲突
+	style = "",                        // 外部内联样式
+	size = "md",                       // 尺寸档位，默认中号
+	color,                             // 可选：图标颜色
+	fallback = "●",                    // 加载中/失败时显示的占位符
+	loading = "lazy",                  // 图标加载策略（lazy / eager）
 } = Astro.props as IconProps;
 
+// 尺寸档位 → Tailwind 字号类的映射
+// 用 text-* 控制尺寸（因为 iconify-icon 的尺寸跟随 font-size）
 const sizeClasses = {
 	xs: "text-xs",
 	sm: "text-sm",
@@ -20,23 +24,37 @@ const sizeClasses = {
 	"2xl": "text-2xl",
 };
 
+// 取对应尺寸类，未匹配时回退到 md（防御非法 size 值）
 const sizeClass = sizeClasses[size] || sizeClasses.md;
+// 将 color 转为内联样式片段；未传 color 时为空
 const colorStyle = color ? `color: ${color};` : "";
+// 合并 color 与外部 style（color 在前，允许外部 style 覆盖）
 const combinedStyle = `${colorStyle}${style}`;
+// 合并尺寸类与外部类名
 const combinedClass = `${sizeClass} ${className}`.trim();
 
+// 生成唯一 ID：用于在同一页面上区分多个图标实例
+// 基于随机数转 36 进制后截取 7 位，作为容器标识
 const iconId = `icon-${Math.random().toString(36).substring(2, 9)}`;
 ---
 
+<!-- 图标容器：
+     - 内联 flex 居中
+     - 携带唯一 data-icon-container ID，供下方脚本定位
+     - style 应用合并后的样式 -->
 <span
 	class={`inline-flex items-center justify-center ${combinedClass}`}
 	style={combinedStyle}
 	data-icon-container={iconId}
 >
+	<!-- 加载占位符：默认显示，图标加载成功后隐藏 -->
+	<!-- animate-pulse 使其有"呼吸"动画，opacity-50 弱化显示 -->
 	<span class="icon-loading animate-pulse opacity-50" data-loading-indicator>
 		{fallback}
 	</span>
 
+	<!-- 实际图标元素：初始 opacity-0 隐藏，加载完成后淡入 -->
+	<!-- iconify-icon 是 astro-icon / Iconify 渲染出的自定义元素 -->
 	<iconify-icon
 		icon={icon}
 		class="icon-content opacity-0 transition-opacity duration-200"
@@ -44,8 +62,14 @@ const iconId = `icon-${Math.random().toString(36).substring(2, 9)}`;
 		loading={loading}></iconify-icon>
 </span>
 
+<!--
+  is:inline  —— 告诉 Astro 不要打包/处理这个脚本，直接内联输出
+  define:vars —— 把服务端变量注入到脚本作用域（类似模板字符串插值）
+  这里注入 iconId 与 icon，使脚本能定位到当前组件实例
+-->
 <script is:inline define:vars={{ iconId, icon }}>
 	(function () {
+		// 通过唯一 ID 定位当前组件的容器
 		const container = document.querySelector(
 			`[data-icon-container="${iconId}"]`,
 		);
@@ -53,6 +77,7 @@ const iconId = `icon-${Math.random().toString(36).substring(2, 9)}`;
 			return;
 		}
 
+		// 分别获取占位符与实际图标元素
 		const loadingIndicator = container.querySelector(
 			"[data-loading-indicator]",
 		);
@@ -62,6 +87,12 @@ const iconId = `icon-${Math.random().toString(36).substring(2, 9)}`;
 			return;
 		}
 
+		/**
+		 * 检查图标是否已加载完成
+		 * iconify-icon 是 Web Component，加载后内容会渲染到 shadowRoot 中
+		 * 因此通过 shadowRoot.children.length > 0 判断是否已有内容
+		 * @returns {boolean} 是否已加载
+		 */
 		function checkIconLoaded() {
 			const hasContent =
 				iconElement.shadowRoot &&
@@ -74,41 +105,50 @@ const iconId = `icon-${Math.random().toString(36).substring(2, 9)}`;
 			return false;
 		}
 
+		/** 显示图标：隐藏占位符，图标淡入 */
 		function showIcon() {
 			loadingIndicator.style.display = "none";
 			iconElement.classList.remove("opacity-0");
 			iconElement.classList.add("opacity-100");
 		}
 
+		/** 显示加载态：显示占位符，图标淡出 */
 		function showLoading() {
 			loadingIndicator.style.display = "inline-flex";
 			iconElement.classList.remove("opacity-100");
 			iconElement.classList.add("opacity-0");
 		}
 
+		// 初始状态：显示加载占位符
 		showLoading();
 
+		// 监听 iconify-icon 的 load 事件（加载成功）
 		iconElement.addEventListener("load", () => {
 			showIcon();
 		});
 
+		// 监听 error 事件（加载失败）：仅警告，保持占位符显示
 		iconElement.addEventListener("error", () => {
 			console.warn(`Failed to load icon: ${icon}`);
 		});
 
+		// 兜底检测：某些情况下 load 事件可能不触发，
+		// 用 MutationObserver 监听 DOM 变化来判断图标是否已渲染
 		if (window.MutationObserver) {
 			const observer = new MutationObserver(() => {
 				if (checkIconLoaded()) {
+					// 检测到内容后立即断开观察，避免持续开销
 					observer.disconnect();
 				}
 			});
 
 			observer.observe(iconElement, {
-				childList: true,
-				subtree: true,
-				attributes: true,
+				childList: true,   // 监听子节点增删
+				subtree: true,     // 监听所有后代节点
+				attributes: true,  // 监听属性变化
 			});
 
+			// 5 秒超时保护：若仍未加载，断开观察并警告
 			setTimeout(() => {
 				observer.disconnect();
 				if (!checkIconLoaded()) {
@@ -117,6 +157,7 @@ const iconId = `icon-${Math.random().toString(36).substring(2, 9)}`;
 			}, 5000);
 		}
 
+		// 初始延迟检查：应对"图标在脚本执行前已加载完成"的情况
 		setTimeout(() => {
 			checkIconLoaded();
 		}, 100);
@@ -124,35 +165,39 @@ const iconId = `icon-${Math.random().toString(36).substring(2, 9)}`;
 </script>
 
 <style>
-	.icon-loading {
-		min-width: 1em;
-		min-height: 1em;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
+/* 加载占位符：最小 1em 尺寸，内联 flex 居中 */
+.icon-loading {
+	min-width: 1em;
+	min-height: 1em;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	}
 
-	.icon-content {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
+/* 实际图标内容：内联 flex 居中 */
+.icon-content {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	}
 
-	[data-icon-container] {
-		position: relative;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		min-width: 1em;
-		min-height: 1em;
+/* 容器：建立相对定位上下文（供内部绝对定位元素使用） */
+[data-icon-container] {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 1em;
+	min-height: 1em;
 	}
 
-	[data-icon-container] .icon-loading,
-	[data-icon-container] .icon-content {
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
+/* 占位符与图标都绝对定位叠放在容器上，实现"交叉淡入淡出"效果 */
+[data-icon-container] .icon-loading,
+[data-icon-container] .icon-content {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
 	}
 </style>

@@ -1,28 +1,47 @@
 ---
 /**
- * ButtonTag - 标签按钮组件
- *
- * 用于标签列表的紧凑链接按钮，支持圆点指示器。
- * 这是一个特定用途的组件，新的通用按钮需求请使用 atoms/Button。
- */
+	* ButtonTag - 标签按钮组件
+	*
+	* 用于标签列表的紧凑链接按钮，支持圆点指示器。
+	* 这是一个特定用途的组件，新的通用按钮需求请使用 atoms/Button。
+	*/
 interface ButtonTagProps {
+	/** 尺寸（此组件未实际使用，保留以兼容调用方） */
 	size?: string;
+	/** 是否显示圆点指示器（如在线状态点） */
 	dot?: boolean;
+	/** 链接地址 */
 	href?: string;
+	/** 无障碍标签（aria-label） */
 	label?: string;
 }
+// 解构 props
+// 注意：size 未解构出来（组件内未使用），仅保留在类型定义中
 const { dot, href, label }: ButtonTagProps = Astro.props;
 ---
 
+<!--
+  外层链接：直接承载按钮样式（不再嵌套 <button>）
+  - btn-regular: 项目预设的常规按钮样式类
+  - h-8 / text-sm / px-3 / rounded-lg: 紧凑型尺寸与圆角
+-->
 <a
 	href={href}
 	aria-label={label}
 	class="btn-regular h-8 text-sm px-3 rounded-lg"
 >
+	<!--
+	  可选圆点指示器：
+	  - h-1 w-1: 4px × 4px 小圆点
+	  - bg-(--btn-content): 亮色模式用按钮内容色
+	  - dark:bg-(--card-bg): 暗色模式改用卡片背景色（在深色底上更明显）
+	  - mr-2: 与文字保持间距
+	-->
 	{
 		dot && (
 			<div class="h-1 w-1 bg-(--btn-content) dark:bg-(--card-bg) transition rounded-md mr-2" />
 		)
 	}
+	<!-- 插槽：由使用方填充标签文字 -->
 	<slot />
 </a>

@@ -1,31 +1,56 @@
 ---
+// 从 astro:assets 导入 getImage：用于在构建时生成优化后的图像（含 srcset）
 import { getImage } from "astro:assets";
+// 导入图像格式类型
 import type { ImageFormat } from "../../../types/config";
+// 导入图像源工具：
+// - publicImageUrl: 把 public 路径转为可访问 URL
+// - resolveImageMetadata: 解析本地图片元数据（供 Astro 优化用）
 import {
 	publicImageUrl,
 	resolveImageMetadata,
 } from "../../../utils/image-source-utils";
+// 导入图像配置工具：格式列表、质量、referrer 策略
 import {
 	getImageFormats,
 	getImageQuality,
 	shouldAddNoReferrer,
 } from "../../../utils/image-utils";
 
+/**
+ * 组件属性定义
+ * 这是一个"媒体查询驱动的多格式图像源"组件，
+ * 通常用于艺术指导（art direction）场景：
+ * 同一张图在不同屏幕尺寸/媒体条件下使用不同的裁剪或格式
+ */
 interface Props {
+	/** 容器（<picture>）id */
 	id?: string;
+	/** 图像地址 */
 	src: string;
+	/** 媒体查询条件，如 "(max-width: 768px)"，决定该 <source> 何时生效 */
 	media: string;
+	/** 替代文本，默认空字符串 */
 	alt?: string;
+	/** 外部类名（应用到内部 <img> 上） */
 	class?: string;
+	/** object-position 值，默认 "center" */
 	position?: string;
+	/** 加载策略，默认 "lazy" */
 	loading?: "eager" | "lazy";
+	/** 加载优先级 */
 	fetchpriority?: "high" | "low" | "auto";
+	/** 输出格式列表，默认从配置读取 */
 	formats?: ImageFormat[];
+	/** 宽度断点数组 */
 	widths?: number[];
+	/** sizes 属性 */
 	sizes?: string;
+	/** 压缩质量，默认从配置读取 */
 	quality?: number;
 }
 
+// 解构 props 并设置默认值
 const {
 	id,
 	src,
@@ -39,38 +64,67 @@ const {
 	sizes,
 	quality = getImageQuality(),
 } = Astro.props;
+// 单独取出 class（保留字，需重命名）
 const className = Astro.props.class;
+
+// 解析本地图片元数据；若图片无法被 Astro 优化（如 public / 远程），返回 null
 const metadata = await resolveImageMetadata(src);
+// 将 src 转为浏览器可访问的 URL（用于回退场景）
 const browserSrc = publicImageUrl(src);
+
+/**
+ * 构建 <source> 列表：
+ * - 若能被 Astro 优化（metadata 存在）：为每个格式生成一个 srcset
+ * - 否则：降级为单个 source（不含 type），直接使用 browserSrc
+ */
 const sources = metadata
 	? await Promise.all(
-			formats.map(async (format) => {
-				const image = await getImage({
-					src: metadata,
-					format,
-					quality,
-					widths,
-				});
-				return {
-					format,
-					srcset: image.srcSet.attribute || image.src,
-				};
-			}),
-		)
+		formats.map(async (format) => {
+			// 对每种格式调用 getImage 生成该格式的 srcset
+			const image = await getImage({
+				src: metadata,
+				format,
+				quality,
+				widths,
+			});
+			return {
+				format,
+				// srcSet.attribute 是完整的 srcset 字符串；为空时回退到单张 src
+				srcset: image.srcSet.attribute || image.src,
+			};
+		}),
+	)
+	// 降级：format 为 undefined（不加 type 属性），srcset 用原始 URL
 	: [{ format: undefined, srcset: browserSrc }];
+
+/**
+ * 透明 1×1 SVG 占位符（base64 data URI）
+ * 作为 <img> 的 src，避免在没有匹配 source 时显示破图
+ */
 const transparentFallback =
 	"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'/%3E";
+
+// 根据配置判断是否添加 no-referrer
 const referrerPolicy = shouldAddNoReferrer(browserSrc)
 	? "no-referrer"
 	: undefined;
 
+/**
+ * 将图像格式转为 MIME 类型（供 <source type="..."> 使用）
+ * 注意：jpg 的 MIME 是 "image/jpeg"，需特殊处理
+ * @param {ImageFormat|undefined} format 图像格式
+ * @returns {string|undefined} MIME 类型
+ */
 function getImageMimeType(format: ImageFormat | undefined): string | undefined {
 	if (!format) return undefined;
 	return `image/${format === "jpg" ? "jpeg" : format}`;
 }
 ---
 
+<!-- <picture> 容器：块级、占满宽高 -->
 <picture id={id} class="block w-full h-full">
+	<!-- 遍历所有 source，每个对应一种格式 + 同一媒体查询条件 -->
+	<!-- 浏览器会选择第一个支持的 type，并按 media 条件决定是否采用 -->
 	{sources.map((source) => (
 		<source
 			media={media}
@@ -79,6 +133,12 @@ function getImageMimeType(format: ImageFormat | undefined): string | undefined {
 			type={getImageMimeType(source.format)}
 		/>
 	))}
+	<!--
+	  回退 <img>：
+	  - src 用透明占位符（避免破图）
+	  - width/height 优先用真实元数据，无元数据时兜底 1×1（防止布局抖动）
+	  - decoding="async" 异步解码，减少主线程阻塞
+	-->
 	<img
 		src={transparentFallback}
 		alt={alt}

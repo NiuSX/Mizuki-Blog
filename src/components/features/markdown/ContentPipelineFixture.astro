@@ -1,17 +1,30 @@
 ---
+/**
+	* 组件属性定义
+	*/
 interface Props {
+	/** 显示在卡片上的标签文本 */
 	label: string;
 }
 
+// 解构 props
 const { label } = Astro.props;
 ---
 
+<!--
+  语义化容器：
+  - 用 <aside>（语义为"侧栏/附注"）而非 <div>，保持语义可读
+  - data-content-pipeline-fixture 是标记属性，供脚本与测试定位
+  - aria-label 提供无障碍说明
+-->
 <aside
 	class="content-pipeline-fixture"
 	data-content-pipeline-fixture
 	aria-label="Imported component example"
 >
+	<!-- 主标签 -->
 	<strong>{label}</strong>
+	<!-- 说明文本：强调"JS 禁用时仍可读" -->
 	<span>
 		Its semantic HTML remains readable even when client-side JavaScript is
 		disabled.
@@ -19,6 +32,10 @@ const { label } = Astro.props;
 </aside>
 
 <script>
+	// 为所有 fixture 元素加上 data-enhanced 标记，
+	// 表示"JS 已执行"。这是一种渐进增强的"已增强"信号：
+	// - 无 JS：元素仍可读（纯 HTML/CSS）
+	// - 有 JS：额外标记 data-enhanced="true"，可用于样式或测试
 	document
 		.querySelectorAll<HTMLElement>("[data-content-pipeline-fixture]")
 		.forEach((element) => {
@@ -27,21 +44,27 @@ const { label } = Astro.props;
 </script>
 
 <style>
-	.content-pipeline-fixture {
-		display: grid;
-		gap: 0.35rem;
-		margin-block: 1.5rem;
-		padding: 1rem 1.125rem;
-		border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
-		border-radius: 0.875rem;
-		background: color-mix(in srgb, var(--primary) 8%, var(--card-bg));
+/* 容器：网格布局 + 主色点缀的边框与背景 */
+.content-pipeline-fixture {
+	display: grid;
+	gap: 0.35rem;
+	/* 逻辑属性：支持横排文本（如阿拉伯语从右到左） */
+	margin-block: 1.5rem;
+	padding: 1rem 1.125rem;
+	/* color-mix 让边框是主色的 35% 透明度 */
+	border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+	border-radius: 0.875rem;
+	/* 背景：主色 8% 与卡片背景混合 */
+	background: color-mix(in srgb, var(--primary) 8%, var(--card-bg));
 	}
 
-	.content-pipeline-fixture strong {
-		color: var(--primary);
+/* 主标签：主色加粗 */
+.content-pipeline-fixture strong {
+	color: var(--primary);
 	}
 
-	.content-pipeline-fixture span {
-		line-height: 1.65;
+/* 说明文本：宽松行高，提升可读性 */
+.content-pipeline-fixture span {
+	line-height: 1.65;
 	}
 </style>

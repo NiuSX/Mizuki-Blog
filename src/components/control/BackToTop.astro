@@ -1,7 +1,15 @@
 ---
+// 导入浮动按钮组件（复用通用浮动按钮）
 import FloatingButton from "@components/common/FloatingButton.astro";
 ---
 
+<!--
+  回到顶部按钮：
+  - 初始带 .hide 类（隐藏），由外部脚本（滚动监听）决定何时显示
+  - onclick 调用全局的 backToTop() 函数（在下方脚本中定义）
+  - 图标使用 material-symbols 的上箭头
+  - ariaLabel 为无障碍标签
+-->
 <FloatingButton
 	id="back-to-top-btn"
 	icon="material-symbols:keyboard-arrow-up-rounded"
@@ -10,7 +18,18 @@ import FloatingButton from "@components/common/FloatingButton.astro";
 	class="hide"
 />
 
+<!--
+  is:raw     —— 内容原样输出，不做 Astro 模板解析
+  is:inline  —— 不打包，直接内联到 HTML
+
+  定义全局的 backToTop 函数，供按钮的 onclick 调用。
+  使用原生 scroll API 平滑滚动到顶部。
+-->
 <script is:raw is:inline>
+	/**
+	 * 平滑滚动回页面顶部
+	 * behavior: "smooth" 触发浏览器原生平滑滚动动画
+	 */
 	function backToTop() {
 		window.scroll({ top: 0, behavior: "smooth" });
 	}

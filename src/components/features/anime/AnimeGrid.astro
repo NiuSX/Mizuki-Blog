@@ -1,12 +1,24 @@
 ---
+// 导入番剧卡片组件（用于渲染每个番剧条目）
 import AnimeCard from "./AnimeCard.astro";
 
+/**
+ * 状态展示信息
+ * 由父组件预先计算，本组件只负责按状态取用
+ */
 interface StatusInfo {
+	/** 状态文本（如"在看"） */
 	text: string;
+	/** 状态徽章的 CSS 类（不同状态不同配色） */
 	class: string;
+	/** 状态图标（emoji 或符号） */
 	icon: string;
 }
 
+/**
+ * 番剧条目数据结构
+ * 与 bangumi-data.json / bilibili-data.json 的输出一致
+ */
 interface AnimeItem {
 	title: string;
 	cover: string;
@@ -21,70 +33,100 @@ interface AnimeItem {
 	genre: string[];
 }
 
+/**
+ * 组件属性定义
+ */
 interface Props {
+	/** 首屏立即可见的番剧列表 */
 	visibleAnimeList: AnimeItem[];
+	/** 延迟加载的番剧列表（存放于 <template> 中，滚动时取出） */
 	hiddenAnimeList: AnimeItem[];
+	/** 状态标识 → 展示信息的映射表 */
 	statusMap: Record<string, StatusInfo>;
+	/** 年份标签的本地化文本 */
 	yearLabel: string;
+	/** 制作公司的本地化文本 */
 	studioLabel: string;
 }
 
+// 解构 props
 const { visibleAnimeList, hiddenAnimeList, statusMap, yearLabel, studioLabel } =
 	Astro.props;
 
+// 是否存在待延迟加载的条目（用于决定是否渲染加载动画）
 const hasHiddenItems = hiddenAnimeList.length > 0;
 ---
 
+<!--
+  可见列表容器：
+  - id 供无限滚动脚本定位
+  - opacity-0 + transition 配合脚本在初始化后淡入（避免首屏闪烁）
+-->
 <div
 	id="anime-list-container"
 	class="anime-grid-container grid gap-4 md:gap-6 opacity-0 transition-opacity duration-300"
 >
 	{
+		// 遍历可见列表，逐个渲染 AnimeCard
 		visibleAnimeList.map((anime) => {
+		// 从 statusMap 取状态信息；未匹配时用兜底值
 			const statusInfo = statusMap[anime.status] || {
-				text: anime.status,
-				class: "btn-regular",
-				icon: "?",
-			};
-			return (
-				<AnimeCard
-					anime={anime}
-					statusInfo={statusInfo}
-					yearLabel={yearLabel}
-					studioLabel={studioLabel}
-				/>
-			);
-		})
+			text: anime.status,
+			class: "btn-regular",
+			icon: "?",
+		};
+		return (
+			<AnimeCard
+				anime={anime}
+				statusInfo={statusInfo}
+				yearLabel={yearLabel}
+				studioLabel={studioLabel}
+			/>
+		);
+	})
 	}
 </div>
 
+<!--
+  延迟加载存储区：
+  用 <template> 存放待加载的卡片（浏览器不会渲染 template 内容）
+  滚动到底部时，脚本从 template 取出 DOM 并插入可见容器
+  好处：不增加首屏 DOM 节点，同时避免重复请求数据
+-->
 <template id="anime-lazy-store">
 	{
+		// 遍历隐藏列表，预渲染为 HTML 字符串但"冻结"在 template 中
 		hiddenAnimeList.map((anime) => {
-			const statusInfo = statusMap[anime.status] || {
-				text: anime.status,
-				class: "btn-regular",
-				icon: "?",
-			};
-			return (
-				<AnimeCard
-					anime={anime}
-					statusInfo={statusInfo}
-					yearLabel={yearLabel}
-					studioLabel={studioLabel}
-				/>
-			);
-		})
+		const statusInfo = statusMap[anime.status] || {
+			text: anime.status,
+			class: "btn-regular",
+			icon: "?",
+		};
+		return (
+			<AnimeCard
+				anime={anime}
+				statusInfo={statusInfo}
+				yearLabel={yearLabel}
+				studioLabel={studioLabel}
+			/>
+		);
+	})
 	}
 </template>
 
+<!--
+  无限滚动哨兵元素：
+  仅当存在待加载条目时渲染。
+  当该元素进入视口时，脚本触发"从 template 取出下一批"的逻辑。
+-->
 {
 	hasHiddenItems && (
-		<div
-			id="infinite-scroll-sentinel"
-			class="w-full h-20 flex items-center justify-center mt-8"
-		>
-			<div class="anime-loading-spinner w-8 h-8 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
-		</div>
-	)
-}
+	<div
+		id="infinite-scroll-sentinel"
+		class="w-full h-20 flex items-center justify-center mt-8"
+	>
+		<!-- 加载动画：旋转的圆环 -->
+		<div class="anime-loading-spinner w-8 h-8 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
+	</div>
+		)
+	}

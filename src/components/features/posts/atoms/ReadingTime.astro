@@ -1,63 +1,89 @@
 ---
+// 导入 astro-icon 的 Icon 组件
 import { Icon } from "astro-icon/components";
 
+// 导入 i18n 相关
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 
+// 导入组件属性类型
 import type { ReadingTimeProps } from "./types";
 
+// 继承 ReadingTimeProps（interface 扩展，保持类型灵活）
 interface Props extends ReadingTimeProps {}
 
+// 解构 props（用 as 标注类型）
+// variant 默认 "meta"（元信息样式）
 const { minutes, variant = "meta", class: className } = Astro.props as Props;
 
+/**
+ * card 变体的图标容器类（meta 变体不使用此变量）
+ * - card：小方形带背景，更像"卡片上的标签"
+ * - meta：使用 .meta-icon（无背景，纯图标）
+ */
 const containerClass =
-	variant === "meta"
-		? "flex items-center"
-		: "h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2";
+    variant === "meta"
+        ? "flex items-center"
+        : "h-6 w-6 rounded-md bg-black/5 dark:bg-white/10 text-black/50 dark:text-white/50 flex items-center justify-center mr-2";
 ---
 
+<!-- 容器：横向排列，应用外部类名 -->
 <div class:list={["flex items-center", className]}>
-	{
-		variant === "meta" && (
-			<div class="meta-icon">
-				<Icon
-					name="material-symbols:schedule-outline-rounded"
-					class="text-xl"
-				/>
-			</div>
-		)
-	}
-	{
-		variant === "card" && (
-			<div class={containerClass}>
-				<Icon
-					name="material-symbols:schedule-outline-rounded"
-					class="text-xl"
-				/>
-			</div>
-		)
-	}
-	{
-		variant === "meta" && (
-			<span class="text-50 text-sm font-medium">
+    <!--
+      ===== 图标区 =====
+      根据 variant 渲染不同的图标容器：
+      - meta：用 .meta-icon（无背景，与其它元信息图标一致）
+      - card：用 containerClass（小方形背景，更醒目）
+    -->
+    {
+        variant === "meta" && (
+                    <div class="meta-icon">
+                        <Icon
+                                name="material-symbols:schedule-outline-rounded"
+                                class="text-xl"
+                        />
+                    </div>
+        )
+    }
+    {
+        variant === "card" && (
+                    <div class={containerClass}>
+                        <Icon
+                                name="material-symbols:schedule-outline-rounded"
+                                class="text-xl"
+                        />
+                    </div>
+        )
+    }
+
+    <!--
+      ===== 文字区 =====
+      - meta 变体：用 <span> 直接显示文字，样式与其它元信息一致（text-50 text-sm font-medium）
+      - card 变体：用 <div> 包裹，字号稍大（text-sm），适合卡片场景
+
+      注意单复数处理：minutes === 1 时用 minuteCount（单数），否则用 minutesCount（复数）
+    -->
+    {
+        variant === "meta" && (
+                    <span class="text-50 text-sm font-medium">
 				{minutes}{" "}
-				{minutes === 1
-					? i18n(I18nKey.minuteCount)
-					: i18n(I18nKey.minutesCount)}
+                        {minutes === 1
+                            ? i18n(I18nKey.minuteCount)
+                            : i18n(I18nKey.minutesCount)}
 			</span>
-		)
-	}
-	{
-		variant === "card" && (
-			<div class="text-sm">
-				{minutes}
-				{" " +
-					i18n(
-						minutes === 1
-							? I18nKey.minuteCount
-							: I18nKey.minutesCount,
-					)}
-			</div>
-		)
-	}
+        )
+    }
+    {
+        variant === "card" && (
+                    <div class="text-sm">
+                        {minutes}
+                        {" " +
+                            i18n(
+                                minutes === 1
+                                    ? I18nKey.minuteCount
+                                    : I18nKey.minutesCount,
+                            )}
+                    </div>
+        )
+    }
 </div>

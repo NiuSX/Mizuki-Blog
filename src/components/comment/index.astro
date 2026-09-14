@@ -1,42 +1,69 @@
 ---
+// 从 astro:content 导入集合条目类型（用于标注 post 的类型）
 import type { CollectionEntry } from "astro:content";
 
+// 从配置入口导入评论配置（含 enable / system / twikoo / giscus 等）
 import { commentConfig } from "@/config";
+// 导入 URL 工具：去掉文件扩展名（如 "hello.md" → "hello"）
 import { removeFileExtension } from "@/utils/url-utils";
 
+// 导入两种评论系统的子组件
 import Giscus from "./Giscus.astro";
 import Twikoo from "./Twikoo.astro";
 
+/**
+ * 组件属性定义
+ */
 interface Props {
+	/** 文章条目（可选）：传入时自动从 post.id 推导评论路径 */
 	post?: CollectionEntry<"posts">;
+	/** 自定义路径（可选）：未传 post 时使用 */
 	path?: string;
 }
 
+// 解构 props（用 as Props 标注类型）
 const { post, path: customPath } = Astro.props as Props;
 
+// 计算评论系统的唯一标识路径：
+// - 有 post：从 post.id 推导，格式为 /posts/<去掉扩展名的 id>
+// - 无 post：使用传入的 customPath，缺失时为空字符串
 const path = post
 	? `/posts/${removeFileExtension(post.id)}`
 	: (customPath ?? "");
 // const url = `${Astro.site?.href}${path}`;
 
+// ===== 确定使用哪个评论系统 =====
 let commentService = "";
 if (commentConfig?.enable) {
 	if (commentConfig.system) {
+		// 优先使用显式配置的 system 字段（如 "giscus" / "twikoo"）
 		commentService = commentConfig.system;
 	} else if (commentConfig.twikoo) {
+		// 兼容旧配置：若无 system 但存在 twikoo 配置，则回退到 twikoo
 		commentService = "twikoo";
 	}
 }
 
+// 判断当前页面是否启用评论：
+// - 有 post：读取文章的 comment 字段，默认 true
+// - 无 post：默认 true
 const commentEnabled = post ? (post.data.comment ?? true) : true;
 ---
 
+<!--
+  三重条件同时满足才渲染评论区：
+  1. commentConfig.enable —— 全局评论开关已开启
+  2. commentEnabled       —— 当前文章/页面允许评论
+  3. path                 —— 有有效的评论路径（用于区分不同页面）
+-->
 {
 	commentConfig?.enable && commentEnabled && path && (
-		<div class="card-base p-6 mb-4">
-			{commentService === "twikoo" && <Twikoo path={path} />}
-			{commentService === "giscus" && <Giscus path={path} />}
-			{commentService === "" && null}
-		</div>
-	)
-}
+	<div class="card-base p-6 mb-4">
+		{/* 根据配置的评论系统选择对应组件 */}
+		{commentService === "twikoo" && <Twikoo path={path} />}
+		{commentService === "giscus" && <Giscus path={path} />}
+		{/* 未匹配到任何系统时渲染空（不报错） */}
+		{commentService === "" && null}
+	</div>
+		)
+	}

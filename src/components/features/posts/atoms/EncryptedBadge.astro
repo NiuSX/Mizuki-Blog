@@ -1,21 +1,37 @@
 ---
+// 导入 astro-icon 的 Icon 组件
 import { Icon } from "astro-icon/components";
 
+// 导入 i18n 相关
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 
+/**
+ * 组件属性定义
+ */
 interface Props {
+	/** 外部传入的额外类名 */
 	class?: string;
 }
 
+// 解构 props（class 重命名为 className）
 const { class: className } = Astro.props;
 ---
 
+<!-- 容器：横向排列，图标 + 文字，应用外部类名 -->
 <div class:list={["flex items-center", className]}>
+	<!-- 图标：锁图标（表示"已加密/受保护"） -->
 	<div class="meta-icon">
 		<Icon name="material-symbols:lock-outline" class="text-xl" />
 	</div>
+	<!-- 文字区：不换行 -->
 	<div class="flex flex-row flex-nowrap items-center">
+		<!--
+		  加密标记文本：
+		  - 用 <span>（非链接，因为这是状态标记而非导航目标）
+		  - 文字由 i18n 提供（如"已加密"/"Encrypted"）
+		  - text-50：50% 透明度，弱化显示
+		-->
 		<span class="transition text-50 text-sm font-medium">
 			{i18n(I18nKey.postEncrypted)}
 		</span>

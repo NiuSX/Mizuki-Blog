@@ -1,125 +1,187 @@
 ---
+// 从 astro:assets 导入 Image 与 Picture 组件：
+// - Image：输出单个 <img>（Astro 会在构建时优化）
+// - Picture：输出 <picture>，可提供多格式回退（如 avif/webp/jpg）
 import { Image as AstroImage, Picture } from "astro:assets";
+// 导入配置类型：图像格式、响应式布局
 import type { ImageFormat, ResponsiveImageLayout } from "../../../types/config";
+// 导入图像源工具：
+// - isRemoteImageSource: 判断是否为远程 URL
+// - publicImageUrl: 把 public 目录路径转为可访问 URL
+// - resolveImageMetadata: 解析本地图片的元数据（供 Astro 优化用）
 import {
-	isRemoteImageSource,
-	publicImageUrl,
-	resolveImageMetadata,
+    isRemoteImageSource,
+    publicImageUrl,
+    resolveImageMetadata,
 } from "../../../utils/image-source-utils";
+// 导入图像配置工具：
+// - getFallbackFormat: 获取回退格式（如 jpg）
+// - getImageFormats: 获取启用的现代格式列表（如 avif/webp）
+// - getImageQuality: 获取默认压缩质量
+// - shouldAddNoReferrer: 判断是否要加 no-referrer（防盗链/隐私保护）
 import {
-	getFallbackFormat,
-	getImageFormats,
-	getImageQuality,
-	shouldAddNoReferrer,
+    getFallbackFormat,
+    getImageFormats,
+    getImageQuality,
+    shouldAddNoReferrer,
 } from "../../../utils/image-utils";
 
+/**
+ * 图像组件的属性定义
+ */
 interface Props {
-	id?: string;
-	src: string;
-	class?: string;
-	alt?: string;
-	position?: string;
-	basePath?: string;
-	loading?: "eager" | "lazy";
-	fetchpriority?: "high" | "low" | "auto";
-	// 响应式图像属性
-	layout?: ResponsiveImageLayout;
-	usePicture?: boolean;
-	formats?: ImageFormat[];
-	widths?: number[];
-	sizes?: string;
-	quality?: number;
-	overlay?: boolean;
+    /** 容器元素 id */
+    id?: string;
+    /** 图像地址（本地路径 / public 路径 / 远程 URL） */
+    src: string;
+    /** 外部传入的类名（应用在容器上） */
+    class?: string;
+    /** 替代文本（无障碍必需） */
+    alt?: string;
+    /** object-position，控制裁剪时的对齐位置，默认 center */
+    position?: string;
+    /** 基础路径前缀（用于解析本地图片） */
+    basePath?: string;
+    /** 原生 loading 策略，默认 lazy */
+    loading?: "eager" | "lazy";
+    /** 原生 fetchpriority，控制加载优先级 */
+    fetchpriority?: "high" | "low" | "auto";
+    // ===== 响应式图像属性 =====
+    /** 响应式布局模式（constrained/full-width/fixed 等） */
+    layout?: ResponsiveImageLayout;
+    /** 是否使用 <picture>（多格式回退），默认 true */
+    usePicture?: boolean;
+    /** 输出的图像格式列表，默认从配置读取 */
+    formats?: ImageFormat[];
+    /** 自定义宽度断点数组 */
+    widths?: number[];
+    /** sizes 属性，告诉浏览器不同视口下图片的显示宽度 */
+    sizes?: string;
+    /** 压缩质量，默认从配置读取 */
+    quality?: number;
+    /** 是否叠加一层遮罩（提升文字可读性），默认 true */
+    overlay?: boolean;
 }
 
+// 解构 props 并设置默认值
 const {
-	id,
-	src,
-	alt,
-	position = "center",
-	basePath = "/",
-	loading = "lazy",
-	fetchpriority,
-	layout = "constrained",
-	usePicture = true,
-	formats = getImageFormats(),
-	widths,
-	sizes,
-	quality = getImageQuality(),
-	overlay = true,
+    id,
+    src,
+    alt,
+    position = "center",
+    basePath = "/",
+    loading = "lazy",
+    fetchpriority,
+    layout = "constrained",
+    usePicture = true,
+    formats = getImageFormats(),
+    widths,
+    sizes,
+    quality = getImageQuality(),
+    overlay = true,
 } = Astro.props;
+// 单独取出 class 属性（保留字，需重命名）
 const className = Astro.props.class;
 
+// 回退格式（如 jpg），用于 <Picture> 的 fallbackFormat
 const fallbackFormat = getFallbackFormat();
 
+// ===== 判断图像来源类型 =====
+// 远程 URL（http/https 开头）
 const isRemote = isRemoteImageSource(src);
+// public 目录图片（以 / 开头且非远程）
 const isPublic = src.startsWith("/") && !isRemote;
+// 尝试解析本地图片元数据（Astro 优化需要）
 const img = await resolveImageMetadata(src, basePath);
+// 三者都不满足：图片路径无效，打印错误提示（但不中断构建）
 if (!img && !isPublic && !isRemote) {
-	console.error(`\n[ERROR] Image file not found: ${src}`);
+    console.error(`\n[ERROR] Image file not found: ${src}`);
 }
 
+// 图像元素的通用类：占满容器 + object-cover 裁剪
 const imageClass = "w-full h-full object-cover";
+// 图像元素的通用样式：按 position 控制裁剪对齐
 const imageStyle = `object-position: ${position}`;
 
 // 基于通配符配置检查是否需要添加 referrerpolicy（仅对非本地图片）
+// public 图片需要转成可访问 URL 再做匹配
 const fullSrc = isPublic ? publicImageUrl(src) : src;
+// 仅在无法被 Astro 优化（!img）且匹配配置时才加 no-referrer
 const referrerPolicy =
-	!img && shouldAddNoReferrer(fullSrc) ? "no-referrer" : undefined;
+    !img && shouldAddNoReferrer(fullSrc) ? "no-referrer" : undefined;
 
-// 构建响应式图像属性
+// 构建响应式图像属性对象
+// 用展开运算符实现"仅在值存在时才加入"的效果，避免传递 undefined
 const responsiveProps = {
-	...(layout && { layout }),
-	...(widths && { widths }),
-	...(sizes && { sizes }),
-	...(quality && { quality }),
+    ...(layout && { layout }),
+    ...(widths && { widths }),
+    ...(sizes && { sizes }),
+    ...(quality && { quality }),
 };
 ---
 
+<!-- 外层容器：
+     - 应用外部类名 + overflow-hidden relative（裁剪 + 定位上下文）
+     - id 用于外部锚点/脚本定位 -->
 <div id={id} class:list={[className, "overflow-hidden relative"]}>
-	{overlay && (
-		<div class="transition absolute inset-0 dark:bg-black/10 bg-opacity-50 pointer-events-none" />
-	)}
-	{
-		img && usePicture && (
-			<Picture
-				src={img}
-				alt={alt || ""}
-				class={imageClass}
-				style={imageStyle}
-				loading={loading}
-				fetchpriority={fetchpriority}
-				formats={formats}
-				fallbackFormat={fallbackFormat}
-				{...responsiveProps}
-			/>
-		)
-	}
-	{
-		img && !usePicture && (
-			<AstroImage
-				src={img}
-				alt={alt || ""}
-				class={imageClass}
-				style={imageStyle}
-				loading={loading}
-				fetchpriority={fetchpriority}
-				{...responsiveProps}
-			/>
-		)
-	}
-	{
-		!img && (
-			<img
-				src={fullSrc}
-				alt={alt || ""}
-				class={imageClass}
-				style={imageStyle}
-				loading={loading}
-				referrerpolicy={referrerPolicy}
-				decoding="async"
-				fetchpriority={fetchpriority}
-			/>
-		)
-	}
+    <!-- 可选遮罩层：绝对定位覆盖整个容器，不响应鼠标事件 -->
+    <!-- 亮色/暗色模式使用不同的遮罩透明度 -->
+    {overlay && (
+            <div class="transition absolute inset-0 dark:bg-black/10 bg-opacity-50 pointer-events-none" />
+    )}
+    <!--
+      分支 1：本地图片 + 使用 Picture
+      Picture 可输出多种格式（avif/webp）+ fallbackFormat 回退，
+      由浏览器根据支持情况选择最优格式
+    -->
+    {
+        img && usePicture && (
+                    <Picture
+                            src={img}
+                            alt={alt || ""}
+                            class={imageClass}
+                            style={imageStyle}
+                            loading={loading}
+                            fetchpriority={fetchpriority}
+                            formats={formats}
+                            fallbackFormat={fallbackFormat}
+                            {...responsiveProps}
+                    />
+        )
+    }
+    <!--
+      分支 2：本地图片 + 不使用 Picture
+      只输出单个 <img>，由 Astro 在构建时优化并生成 srcset
+    -->
+    {
+        img && !usePicture && (
+                    <AstroImage
+                            src={img}
+                            alt={alt || ""}
+                            class={imageClass}
+                            style={imageStyle}
+                            loading={loading}
+                            fetchpriority={fetchpriority}
+                            {...responsiveProps}
+                    />
+        )
+    }
+    <!--
+      分支 3：无法被 Astro 优化（public 图片或远程 URL）
+      直接用原生 <img>，不做构建时优化
+    -->
+    {
+        !img && (
+                    <img
+                            src={fullSrc}
+                            alt={alt || ""}
+                            class={imageClass}
+                            style={imageStyle}
+                            loading={loading}
+                            referrerpolicy={referrerPolicy}
+                            decoding="async"
+                            fetchpriority={fetchpriority}
+                    />
+        )
+    }
 </div>

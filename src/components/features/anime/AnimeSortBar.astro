@@ -1,25 +1,46 @@
 ---
 // AnimeSortBar - 排序栏组件
 // 当前页面没有排序功能，预留接口以便后续扩展
+/**
+	* 组件属性定义
+	* 设计说明：这是一个"预留组件"——排序功能尚未实现，
+	* 但提前定义好接口与 DOM 结构，便于后续接入。
+	*/
 interface Props {
+	/** 排序栏的标签文本（如 "排序" / "Sort"），默认 "Sort" */
 	sortByLabel?: string;
+	/** 排序选项列表（value + label），默认为空数组 */
 	sortOptions?: { value: string; label: string }[];
 }
 
+// 解构 props 并设置默认值
+// sortOptions 默认空数组 → 不传时组件不渲染任何内容
 const { sortByLabel = "Sort", sortOptions = [] } = Astro.props;
 ---
 
+<!--
+  仅当有排序选项时才渲染整个排序栏
+  这是"按需渲染"的防御设计：无选项时组件完全不可见（不占位）
+-->
 {
 	sortOptions.length > 0 && (
-		<div class="anime-sort-bar mb-4">
-			<span class="text-sm text-[var(--text-muted)] mr-2">
+	<div class="anime-sort-bar mb-4">
+		<!-- 排序标签文本 -->
+		<span class="text-sm text-[var(--text-muted)] mr-2">
 				{sortByLabel}:
 			</span>
-			<select class="anime-sort-select px-3 py-1.5 rounded-lg bg-[var(--btn-regular-bg)] border border-[var(--line-divider)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50">
-				{sortOptions.map((option) => (
-					<option value={option.value}>{option.label}</option>
-				))}
-			</select>
-		</div>
-	)
-}
+		<!--
+          排序下拉框：
+          - 使用原生 <select>，无 JS 依赖
+          - 样式：圆角、边框、聚焦时主色环
+          注意：当前没有绑定 change 事件，选中后不会触发任何行为
+        -->
+		<select class="anime-sort-select px-3 py-1.5 rounded-lg bg-[var(--btn-regular-bg)] border border-[var(--line-divider)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/50">
+			{/* 遍历选项生成 <option> */}
+			{sortOptions.map((option) => (
+				<option value={option.value}>{option.label}</option>
+			))}
+		</select>
+	</div>
+		)
+	}

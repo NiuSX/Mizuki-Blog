@@ -9,141 +9,218 @@
 ---
 
 <script>
-	const MIN_SCALE = 0.5;
-	const MAX_SCALE = 4;
-	const STEP = 1.2;
+    // ===== 缩放常量 =====
+    /** 最小缩放比例 */
+    const MIN_SCALE = 0.5;
+    /** 最大缩放比例 */
+    const MAX_SCALE = 4;
+    /** 每次缩放的步进倍率（1.2 表示放大 20%） */
+    const STEP = 1.2;
 
-	type DiagramState = {
-		scale: number;
-		x: number;
-		y: number;
-	};
+    /**
+     * 图表交互状态
+     */
+    type DiagramState = {
+        /** 当前缩放比例 */
+        scale: number;
+        /** 水平位移（px） */
+        x: number;
+        /** 垂直位移（px） */
+        y: number;
+    };
 
-	function applyTheme(root: ParentNode = document) {
-		const dark = document.documentElement.classList.contains("dark");
-		root.querySelectorAll<HTMLImageElement>(".plantuml-image").forEach((image) => {
-			const light = image.dataset.lightSrc || image.src;
-			const source = dark ? image.dataset.darkSrc || light : light;
-			if (source && image.src !== source) image.src = source;
-		});
-	}
+    /**
+     * 应用主题：根据暗色模式切换 PlantUML 图片的 src
+     * PlantUML 图表通常有亮/暗两套图片，通过 data-light-src / data-dark-src 指定
+     * @param {ParentNode} root 搜索范围（默认整个 document）
+     */
+    function applyTheme(root: ParentNode = document) {
+        const dark = document.documentElement.classList.contains("dark");
+        root.querySelectorAll<HTMLImageElement>(".plantuml-image").forEach((image) => {
+            // 亮色图：优先用 data-light-src，回退到当前 src
+            const light = image.dataset.lightSrc || image.src;
+            // 暗色模式用 data-dark-src，回退到亮色图
+            const source = dark ? image.dataset.darkSrc || light : light;
+            // 仅当需要切换时才赋值（避免触发无谓的重新加载）
+            if (source && image.src !== source) image.src = source;
+        });
+    }
 
-	function initDiagram(container: HTMLElement) {
-		if (container.dataset.diagramReady === "true") return;
-		const target = container.querySelector<HTMLElement>(".plantuml-image, svg");
-		if (!target) return;
-		container.dataset.diagramReady = "true";
-		const state: DiagramState = { scale: 1, x: 0, y: 0 };
-		const apply = () => {
-			target.style.transformOrigin = "center";
-			target.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
-		};
-		const zoom = (factor: number) => {
-			state.scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, state.scale * factor));
-			apply();
-		};
-		const reset = () => {
-			state.scale = 1;
-			state.x = 0;
-			state.y = 0;
-			apply();
-		};
-		const controls = document.createElement("div");
-		controls.className = "diagram-controls";
-		const actions: Array<[string, string, () => void]> = [
-			["＋", "放大", () => zoom(STEP)],
-			["−", "缩小", () => zoom(1 / STEP)],
-			["↺", "重置", reset],
-			["⛶", "全屏", () => openFullscreen(target)],
-		];
-		for (const [label, title, action] of actions) {
-			const button = document.createElement("button");
-			button.type = "button";
-			button.className = "diagram-control";
-			button.textContent = label;
-			button.title = title;
-			button.setAttribute("aria-label", title);
-			button.addEventListener("click", (event) => {
-				event.preventDefault();
-				action();
-			});
-			controls.append(button);
-		}
-		container.append(controls);
+    /**
+     * 初始化单个图表容器（幂等）
+     * 添加缩放/重置/全屏控制按钮 + 拖拽 + 双击缩放
+     * @param {HTMLElement} container 图表容器
+     */
+    function initDiagram(container: HTMLElement) {
+        // 幂等保护：已初始化过则直接返回（避免重复添加控件与监听）
+        if (container.dataset.diagramReady === "true") return;
+        // 目标元素：图片或内联 SVG
+        const target = container.querySelector<HTMLElement>(".plantuml-image, svg");
+        if (!target) return;
+        // 标记已初始化
+        container.dataset.diagramReady = "true";
 
-		let dragging = false;
-		let startX = 0;
-		let startY = 0;
-		let originX = 0;
-		let originY = 0;
-		container.addEventListener("pointerdown", (event) => {
-			if (event.pointerType === "touch" || event.button !== 0) return;
-			if ((event.target as Element).closest(".diagram-controls")) return;
-			dragging = true;
-			startX = event.clientX;
-			startY = event.clientY;
-			originX = state.x;
-			originY = state.y;
-			container.setPointerCapture(event.pointerId);
-		});
-		container.addEventListener("pointermove", (event) => {
-			if (!dragging) return;
-			state.x = originX + event.clientX - startX;
-			state.y = originY + event.clientY - startY;
-			apply();
-		});
-		const end = () => {
-			dragging = false;
-		};
-		container.addEventListener("pointerup", end);
-		container.addEventListener("pointercancel", end);
-		container.addEventListener("dblclick", () =>
-			state.scale === 1 ? zoom(STEP * STEP) : reset(),
-		);
-	}
+        // 交互状态
+        const state: DiagramState = { scale: 1, x: 0, y: 0 };
 
-	function openFullscreen(target: HTMLElement) {
-		const overlay = document.createElement("div");
-		overlay.className = "diagram-fullscreen";
-		const clone = target.cloneNode(true) as HTMLElement;
-		clone.removeAttribute("style");
-		const close = () => overlay.remove();
-		const closeButton = document.createElement("button");
-		closeButton.type = "button";
-		closeButton.className = "diagram-fullscreen-close";
-		closeButton.textContent = "×";
-		closeButton.setAttribute("aria-label", "关闭全屏图表");
-		closeButton.addEventListener("click", close);
-		overlay.append(clone, closeButton);
-		overlay.addEventListener("click", (event) => {
-			if (event.target === overlay) close();
-		});
-		const onKey = (event: KeyboardEvent) => {
-			if (event.key === "Escape") {
-				close();
-				document.removeEventListener("keydown", onKey);
-			}
-		};
-		document.addEventListener("keydown", onKey);
-		document.body.append(overlay);
-	}
+        /** 应用当前变换到目标元素 */
+        const apply = () => {
+            target.style.transformOrigin = "center";
+            target.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
+        };
 
-	function initAll(root: ParentNode = document) {
-		applyTheme(root);
-		root
-			.querySelectorAll<HTMLElement>(".diagram-container")
-			.forEach(initDiagram);
-	}
+        /** 按倍率缩放（结果会被钳制在 [MIN_SCALE, MAX_SCALE] 内） */
+        const zoom = (factor: number) => {
+            state.scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, state.scale * factor));
+            apply();
+        };
 
-	const themeObserver = new MutationObserver(() => applyTheme());
-	themeObserver.observe(document.documentElement, {
-		attributes: true,
-		attributeFilter: ["class"],
-	});
-	document.addEventListener("astro:page-load", () => initAll());
-	document.addEventListener("swup:pageView", () => initAll());
-	document.addEventListener("password:decrypted", () =>
-		requestAnimationFrame(() => initAll()),
-	);
-	initAll();
+        /** 重置缩放与位移 */
+        const reset = () => {
+            state.scale = 1;
+            state.x = 0;
+            state.y = 0;
+            apply();
+        };
+
+        // ===== 创建控制按钮组 =====
+        const controls = document.createElement("div");
+        controls.className = "diagram-controls";
+        // [按钮文本, 无障碍标题, 点击行为]
+        const actions: Array<[string, string, () => void]> = [
+            ["＋", "放大", () => zoom(STEP)],
+            ["−", "缩小", () => zoom(1 / STEP)],
+            ["↺", "重置", reset],
+            ["⛶", "全屏", () => openFullscreen(target)],
+        ];
+        for (const [label, title, action] of actions) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "diagram-control";
+            button.textContent = label;
+            button.title = title;
+            button.setAttribute("aria-label", title);
+            button.addEventListener("click", (event) => {
+                event.preventDefault();
+                action();
+            });
+            controls.append(button);
+        }
+        container.append(controls);
+
+        // ===== 拖拽交互 =====
+        let dragging = false;
+        let startX = 0;
+        let startY = 0;
+        let originX = 0;
+        let originY = 0;
+
+        container.addEventListener("pointerdown", (event) => {
+            // 触摸设备走原生滚动，鼠标左键才拖拽
+            if (event.pointerType === "touch" || event.button !== 0) return;
+            // 点在控制按钮上不触发拖拽
+            if ((event.target as Element).closest(".diagram-controls")) return;
+            dragging = true;
+            startX = event.clientX;
+            startY = event.clientY;
+            originX = state.x;
+            originY = state.y;
+            // 捕获指针，确保移出容器后仍能接收事件
+            container.setPointerCapture(event.pointerId);
+        });
+        container.addEventListener("pointermove", (event) => {
+            if (!dragging) return;
+            // 位移 = 起始位移 + (当前坐标 - 起始坐标)
+            state.x = originX + event.clientX - startX;
+            state.y = originY + event.clientY - startY;
+            apply();
+        });
+        const end = () => {
+            dragging = false;
+        };
+        container.addEventListener("pointerup", end);
+        container.addEventListener("pointercancel", end);
+
+        // 双击切换：正常 → 放大，已放大 → 重置
+        container.addEventListener("dblclick", () =>
+            state.scale === 1 ? zoom(STEP * STEP) : reset(),
+        );
+    }
+
+    /**
+     * 全屏查看图表
+     * 通过克隆节点 + 全屏遮罩实现（不依赖 Fullscreen API，兼容性更好）
+     * @param {HTMLElement} target 要全屏展示的元素
+     */
+    function openFullscreen(target: HTMLElement) {
+        // 创建全屏遮罩层
+        const overlay = document.createElement("div");
+        overlay.className = "diagram-fullscreen";
+
+        // 克隆目标元素（避免移动原元素影响页面布局）
+        const clone = target.cloneNode(true) as HTMLElement;
+        // 移除原有内联样式（缩放/位移），以原始尺寸展示
+        clone.removeAttribute("style");
+
+        /** 关闭全屏 */
+        const close = () => overlay.remove();
+
+        // 关闭按钮
+        const closeButton = document.createElement("button");
+        closeButton.type = "button";
+        closeButton.className = "diagram-fullscreen-close";
+        closeButton.textContent = "×";
+        closeButton.setAttribute("aria-label", "关闭全屏图表");
+        closeButton.addEventListener("click", close);
+
+        overlay.append(clone, closeButton);
+
+        // 点击遮罩空白处关闭（点击内容不关闭）
+        overlay.addEventListener("click", (event) => {
+            if (event.target === overlay) close();
+        });
+
+        // Escape 键关闭
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                close();
+                document.removeEventListener("keydown", onKey);
+            }
+        };
+        document.addEventListener("keydown", onKey);
+
+        document.body.append(overlay);
+    }
+
+    /**
+     * 初始化所有图表（主题 + 交互）
+     * @param {ParentNode} root 搜索范围
+     */
+    function initAll(root: ParentNode = document) {
+        applyTheme(root);
+        root
+            .querySelectorAll<HTMLElement>(".diagram-container")
+            .forEach(initDiagram);
+    }
+
+    // ===== 主题变化监听 =====
+    // 监听 <html> 的 class 变化，暗色模式切换时自动切换图表图片
+    const themeObserver = new MutationObserver(() => applyTheme());
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["class"],
+    });
+
+    // ===== 页面生命周期监听 =====
+    // Astro View Transitions
+    document.addEventListener("astro:page-load", () => initAll());
+    // Swup 页面切换
+    document.addEventListener("swup:pageView", () => initAll());
+    // 加密文章解密完成（动态内容需要重新初始化）
+    document.addEventListener("password:decrypted", () =>
+        requestAnimationFrame(() => initAll()),
+    );
+
+    // 首次初始化
+    initAll();
 </script>

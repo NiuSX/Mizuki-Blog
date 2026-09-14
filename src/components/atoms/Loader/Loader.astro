@@ -1,69 +1,88 @@
 ---
+// 从同级 types 文件导入 LoaderProps 类型定义
 import type { LoaderProps } from "./types";
 
+// 解构 props 并设置默认值：
+// - size:    尺寸档位，默认中号
+// - variant: 加载动画样式（spinner/dots/pulse），默认 spinner
+// - class:   外部类名，重命名为 className 避免保留字冲突
 const {
 	size = "md",
 	variant = "spinner",
 	class: className = "",
 }: LoaderProps = Astro.props;
 
+// 尺寸档位 → Tailwind 宽高类映射
 const sizeClasses = {
-	sm: "w-4 h-4",
-	md: "w-6 h-6",
-	lg: "w-8 h-8",
+	sm: "w-4 h-4",  // 16px × 16px
+	md: "w-6 h-6",  // 24px × 24px
+	lg: "w-8 h-8",  // 32px × 32px
 };
 ---
 
+<!-- ===== 变体 1：spinner（旋转圆环） ===== -->
+<!-- 由 SVG 圆环 + 弧线组成，使用 animate-spin 持续旋转 -->
 {
 	variant === "spinner" && (
-		<div class={`loader-spinner ${sizeClasses[size]} ${className}`.trim()}>
-			<svg class="animate-spin" viewBox="0 0 24 24" fill="none">
-				<circle
-					class="opacity-25"
-					cx="12"
-					cy="12"
-					r="10"
-					stroke="currentColor"
-					stroke-width="4"
-				/>
-				<path
-					class="opacity-75"
-					fill="currentColor"
-					d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-				/>
-			</svg>
-		</div>
-	)
-}
+	<div class={`loader-spinner ${sizeClasses[size]} ${className}`.trim()}>
+		<!-- animate-spin：Tailwind 内置的 360° 旋转动画 -->
+		<svg class="animate-spin" viewBox="0 0 24 24" fill="none">
+			<!-- 背景圆环：透明度 25%，形成"跑道"效果 -->
+			<circle
+				class="opacity-25"
+				cx="12"
+				cy="12"
+				r="10"
+				stroke="currentColor"
+				stroke-width="4"
+			/>
+			<!-- 前景弧线：透明度 75%，形成"转动的进度弧" -->
+			<path
+				class="opacity-75"
+				fill="currentColor"
+				d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+			/>
+		</svg>
+	</div>
+		)
+	}
 
+<!-- ===== 变体 2：dots（三点跳动） ===== -->
+<!-- 三个圆点依次跳动，通过 animation-delay 形成波浪效果 -->
 {
 	variant === "dots" && (
-		<div class={`loader-dots flex space-x-1 ${className}`.trim()}>
-			<div
-				class="w-2 h-2 bg-current rounded-full animate-bounce"
-				style="animation-delay: 0ms;"
-			/>
-			<div
-				class="w-2 h-2 bg-current rounded-full animate-bounce"
-				style="animation-delay: 150ms;"
-			/>
-			<div
-				class="w-2 h-2 bg-current rounded-full animate-bounce"
-				style="animation-delay: 300ms;"
-			/>
-		</div>
-	)
-}
+	<div class={`loader-dots flex space-x-1 ${className}`.trim()}>
+		<!-- 第 1 个点：无延迟 -->
+		<div
+			class="w-2 h-2 bg-current rounded-full animate-bounce"
+			style="animation-delay: 0ms;"
+		/>
+		<!-- 第 2 个点：延迟 150ms -->
+		<div
+			class="w-2 h-2 bg-current rounded-full animate-bounce"
+			style="animation-delay: 150ms;"
+		/>
+		<!-- 第 3 个点：延迟 300ms -->
+		<div
+			class="w-2 h-2 bg-current rounded-full animate-bounce"
+			style="animation-delay: 300ms;"
+		/>
+	</div>
+		)
+	}
 
+<!-- ===== 变体 3：pulse（脉冲圆） ===== -->
+<!-- 单个圆形，使用 animate-pulse 做透明度脉冲 -->
 {
 	variant === "pulse" && (
-		<div class={`loader-pulse ${sizeClasses[size]} ${className}`.trim()}>
-			<div class="w-full h-full bg-current rounded-full animate-pulse" />
-		</div>
-	)
-}
+	<div class={`loader-pulse ${sizeClasses[size]} ${className}`.trim()}>
+		<div class="w-full h-full bg-current rounded-full animate-pulse" />
+	</div>
+		)
+	}
 
 <style>
+	/* spinner 容器：内联 flex 居中，默认使用主色 */
 	.loader-spinner {
 		display: inline-flex;
 		align-items: center;
@@ -71,6 +90,7 @@ const sizeClasses = {
 		color: var(--primary);
 	}
 
+	/* dots 容器：垂直居中（space-x-1 由 Tailwind 提供） */
 	.loader-dots {
 		align-items: center;
 	}
